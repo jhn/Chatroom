@@ -12,5 +12,7 @@ public class Main {
         {
             System.out.println(user.getUsername() + " " + user.getPassword());
         }
+        Server server = new Server(40404);
+        server.start();
     }
 }

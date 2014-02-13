@@ -1,24 +1,28 @@
 package mn.jhn;
 
 import java.io.IOException;
-import java.io.PrintWriter;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.util.HashSet;
 
 public class Server
 {
-    private int port;
+    private final int port;
     private HashSet<User> users;
 
-    public void run() throws IOException
+    public Server(int port)
     {
-        ServerSocket listener = new ServerSocket(9090);
+        this.port = port;
+    }
+
+    public void start() throws IOException
+    {
+        ServerSocket listener = new ServerSocket(this.port);
         try
         {
             while (true)
             {
-                Socket socket = listener.accept();
+                new Runner(listener.accept()).run();
             }
         }
         finally
@@ -27,10 +31,15 @@ public class Server
         }
     }
 
-    private static class Runner extends Thread
+    private class Runner extends Thread
     {
         private String name;
         private Socket socket;
+
+        public Runner(Socket socket)
+        {
+            this.socket = socket;
+        }
 
         public void run()
         {
