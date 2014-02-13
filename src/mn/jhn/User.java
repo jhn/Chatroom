@@ -2,8 +2,8 @@ package mn.jhn;
 
 public class User
 {
-    private String username;
-    private String password;
+    private final String username;
+    private final String password;
 
     public User(String username, String password)
     {
@@ -15,19 +15,43 @@ public class User
         return username;
     }
 
-    public void setUsername(String username)
-    {
-        this.username = username;
-    }
-
     public String getPassword()
     {
         return password;
     }
 
-    public void setPassword(String password)
+    @Override
+    public boolean equals(Object o)
     {
-        this.password = password;
+        if (this == o)
+        {
+            return true;
+        }
+        if (o == null || getClass() != o.getClass())
+        {
+            return false;
+        }
+
+        User user = (User) o;
+
+        return password.equals(user.password) && username.equals(user.username);
+
     }
 
+    @Override
+    public int hashCode()
+    {
+        int result = username.hashCode();
+        result = 31 * result + password.hashCode();
+        return result;
+    }
+
+    @Override
+    public String toString()
+    {
+        return "User{" +
+                "username='" + username + '\'' +
+                ", password='" + password + '\'' +
+                '}';
+    }
 }
