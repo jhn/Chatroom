@@ -26,4 +26,15 @@ public class Server
             listener.close();
         }
     }
+
+    private static class Runner extends Thread
+    {
+        private String name;
+        private Socket socket;
+
+        public void run()
+        {
+            System.out.println("Running!");
+        }
+    }
 }
