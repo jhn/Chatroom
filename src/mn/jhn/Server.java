@@ -15,14 +15,14 @@ public class Server
 {
     private final int port;
     private final Authenticator auth;
-    private Set<User> currentUsers;
     private Executor threadPool;
+    private static Set<User> currentUsers = new HashSet<User>();
+    private static HashSet<PrintWriter> writers = new HashSet<PrintWriter>();
 
     public Server(int port)
     {
         this.port = port;
         this.auth = new Authenticator();
-        this.currentUsers = new HashSet<User>();
     }
 
     public void start() throws IOException
