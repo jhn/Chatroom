@@ -27,7 +27,7 @@ public class Authenticator
 
     public boolean authenticateUser(String username, String password)
     {
-        return !isIpBlocked() && isUserAlreadyLoggedIn(username) && authenticatesSuccessfully(username, password);
+        return !isIpBlocked() && !isUserAlreadyLoggedIn(username) && authenticatesSuccessfully(username, password);
     }
 
     public boolean isIpBlocked()
