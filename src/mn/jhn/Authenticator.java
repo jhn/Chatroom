@@ -46,6 +46,8 @@ public class Authenticator
         {
             if (users.contains(new User(username, password)))
             {
+                // todo: remove on close
+                loggedInUsers.add(username);
                 return true;
             }
             this.loginAttempts++;

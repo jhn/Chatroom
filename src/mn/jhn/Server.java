@@ -7,7 +7,6 @@ import java.io.PrintWriter;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.util.HashSet;
-import java.util.Set;
 import java.util.concurrent.Executor;
 import java.util.concurrent.Executors;
 
@@ -16,7 +15,7 @@ public class Server
     private final int port;
     private final Authenticator auth;
     private Executor threadPool;
-    private static Set<User> currentUsers = new HashSet<User>();
+    private static HashSet<User> currentUsers = new HashSet<User>();
     private static HashSet<PrintWriter> writers = new HashSet<PrintWriter>();
 
     public Server(int port)
@@ -29,6 +28,7 @@ public class Server
     {
         this.threadPool = Executors.newFixedThreadPool(this.auth.getTotalUsers());
         ServerSocket listener = new ServerSocket(this.port);
+        System.out.println("Listening on port " + this.port);
         while (true)
         {
             spawnOnConnection(listener);
@@ -59,6 +59,31 @@ public class Server
             {
                 this.in = new BufferedReader(new InputStreamReader(socket.getInputStream()));
                 this.out = new PrintWriter(socket.getOutputStream(), true);
+
+                this.out.println("Username: ");
+                String username = this.in.readLine();
+                this.out.println("Password: ");
+                String password = this.in.readLine();
+                if (username == null || password == null || !auth.authenticateUser(username, password))
+                {
+                    return;
+                }
+
+                out.println("Logged in.");
+                out.println("Welcome!");
+                writers.add(out);
+
+                while (true)
+                {
+                    String message = in.readLine();
+                    if (message == null)
+                    {
+                        return;
+                    }
+                    for (PrintWriter writer : writers) {
+                        writer.println(username + ": " + message);
+                    }
+                }
             }
             catch (IOException e)
             {
