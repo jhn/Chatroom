@@ -3,6 +3,7 @@ package mn.jhn;
 import java.io.BufferedReader;
 import java.io.FileReader;
 import java.io.IOException;
+import java.util.Collections;
 import java.util.HashSet;
 import java.util.Set;
 
@@ -25,6 +26,6 @@ public class Utils
             line = br.readLine();
         }
         br.close();
-        return users;
+        return Collections.unmodifiableSet(users);
     }
 }

@@ -34,15 +34,15 @@ public class User
 
         User user = (User) o;
 
-        return password.equals(user.password) && username.equals(user.username);
+        return this.password.equals(user.password) && this.username.equals(user.username);
 
     }
 
     @Override
     public int hashCode()
     {
-        int result = username.hashCode();
-        result = 31 * result + password.hashCode();
+        int result = this.username.hashCode();
+        result = 31 * result + this.password.hashCode();
         return result;
     }
 
@@ -50,8 +50,8 @@ public class User
     public String toString()
     {
         return "User{" +
-                "username='" + username + '\'' +
-                ", password='" + password + '\'' +
+                "username='" + this.username + '\'' +
+                ", password='" + this.password + '\'' +
                 '}';
     }
 }

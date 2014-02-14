@@ -1,6 +1,9 @@
 package mn.jhn;
 
+import java.io.BufferedReader;
 import java.io.IOException;
+import java.io.InputStreamReader;
+import java.io.PrintWriter;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.util.HashSet;
@@ -11,61 +14,67 @@ import java.util.concurrent.Executors;
 public class Server
 {
     private final int port;
-    private Set<User> users;
-    private Executor pool;
+    private final Authenticator auth;
+    private Set<User> currentUsers;
+    private Executor threadPool;
 
     public Server(int port)
     {
         this.port = port;
-    }
-
-    public void registerUsers(Set<User> users)
-    {
-        this.users = new HashSet<User>(users);
+        this.auth = new Authenticator();
+        this.currentUsers = new HashSet<User>();
     }
 
     public void start() throws IOException
     {
-        if (this.users == null || users.isEmpty())
-        {
-            throw new RuntimeException("No registered users.");
-        }
-
-        this.pool = Executors.newFixedThreadPool(this.users.size());
+        this.threadPool = Executors.newFixedThreadPool(this.auth.getTotalUsers());
         ServerSocket listener = new ServerSocket(this.port);
-        spawnOnConnection(listener);
+        while (true)
+        {
+            spawnOnConnection(listener);
+        }
     }
 
     private void spawnOnConnection(ServerSocket listener) throws IOException
     {
-        while (true)
-        {
-            final Socket s = listener.accept();
-            Runnable r = new Runnable()
-            {
-                @Override
-                public void run()
-                {
-                    // magic
-                }
-            };
-            this.pool.execute(r);
-        }
+        final Socket clientSocket = listener.accept();
+        this.threadPool.execute(new Runner(clientSocket));
     }
 
-    private class Runner extends Thread
+    private class Runner implements Runnable
     {
-        private String name;
-        private Socket socket;
+        private final Socket socket;
+        private BufferedReader in;
+        private PrintWriter out;
 
-        public Runner(Socket socket)
+        public Runner(Socket clientSocket)
         {
-            this.socket = socket;
+            this.socket = clientSocket;
         }
 
+        @Override
         public void run()
         {
-            System.out.println("Running!");
+            try
+            {
+                this.in = new BufferedReader(new InputStreamReader(socket.getInputStream()));
+                this.out = new PrintWriter(socket.getOutputStream(), true);
+            }
+            catch (IOException e)
+            {
+                e.printStackTrace();
+            }
+            finally
+            {
+                try
+                {
+                    socket.close();
+                }
+                catch (IOException e)
+                {
+                    System.out.println("Couldn't close the socket: " + e);
+                }
+            }
         }
     }
 }
