@@ -56,17 +56,21 @@ public class Server
         @Override
         public void run()
         {
+            String username = "";
+            String password = "";
             try
             {
                 this.out.println("Username: ");
-                String username = this.in.readLine();
+                username = this.in.readLine();
                 this.out.println("Password: ");
-                String password = this.in.readLine();
+                password = this.in.readLine();
 
                 if (username == null || password == null || !auth.authenticateUser(username, password))
                 {
                     return;
                 }
+
+                currentUsers.add(new User(username, password));
 
                 out.println("Logged in.");
                 out.println("Welcome!");
@@ -91,6 +95,7 @@ public class Server
             }
             finally
             {
+                currentUsers.remove(new User(username, password));
                 try
                 {
                     writers.remove(out);
