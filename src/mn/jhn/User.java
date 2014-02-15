@@ -10,6 +10,7 @@ public class User
         this.username = username;
         this.password = password;
     }
+
     public String getUsername()
     {
         return username;
@@ -35,7 +36,6 @@ public class User
         User user = (User) o;
 
         return this.password.equals(user.password) && this.username.equals(user.username);
-
     }
 
     @Override

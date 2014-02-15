@@ -14,9 +14,9 @@ public class Server
 {
     private final int port;
     private final Authenticator auth;
-    private Executor threadPool;
     private static HashSet<User> currentUsers = new HashSet<User>();
     private static HashSet<PrintWriter> writers = new HashSet<PrintWriter>();
+    private static final Executor threadPool = Executors.newFixedThreadPool(10);
 
     public Server(int port)
     {
@@ -26,7 +26,6 @@ public class Server
 
     public void start() throws IOException
     {
-        this.threadPool = Executors.newFixedThreadPool(this.auth.getTotalUsers());
         ServerSocket listener = new ServerSocket(this.port);
         System.out.println("Listening on port " + this.port);
         while (true)
@@ -38,18 +37,20 @@ public class Server
     private void spawnOnConnection(ServerSocket listener) throws IOException
     {
         final Socket clientSocket = listener.accept();
-        this.threadPool.execute(new Runner(clientSocket));
+        threadPool.execute(new Runner(clientSocket));
     }
 
     private class Runner implements Runnable
     {
         private final Socket socket;
-        private BufferedReader in;
-        private PrintWriter out;
+        private final BufferedReader in;
+        private final PrintWriter out;
 
-        public Runner(Socket clientSocket)
+        public Runner(Socket clientSocket) throws IOException
         {
             this.socket = clientSocket;
+            this.in     = new BufferedReader(new InputStreamReader(socket.getInputStream()));
+            this.out    = new PrintWriter(socket.getOutputStream(), true);
         }
 
         @Override
@@ -57,13 +58,11 @@ public class Server
         {
             try
             {
-                this.in = new BufferedReader(new InputStreamReader(socket.getInputStream()));
-                this.out = new PrintWriter(socket.getOutputStream(), true);
-
                 this.out.println("Username: ");
                 String username = this.in.readLine();
                 this.out.println("Password: ");
                 String password = this.in.readLine();
+
                 if (username == null || password == null || !auth.authenticateUser(username, password))
                 {
                     return;
@@ -80,7 +79,8 @@ public class Server
                     {
                         return;
                     }
-                    for (PrintWriter writer : writers) {
+                    for (PrintWriter writer : writers)
+                    {
                         writer.println(username + ": " + message);
                     }
                 }
@@ -93,6 +93,7 @@ public class Server
             {
                 try
                 {
+                    writers.remove(out);
                     socket.close();
                 }
                 catch (IOException e)
