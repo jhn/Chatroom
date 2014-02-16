@@ -1,16 +1,18 @@
 package mn.jhn;
 
 import java.io.IOException;
-import java.net.Inet4Address;
+import java.net.InetAddress;
+import java.net.Socket;
+import java.util.Collections;
 import java.util.HashSet;
 import java.util.Set;
 
-public class Authenticator
+public class Validator
 {
     private static final int MAX_LOGIN_ATTEMPS = 3;
-    public final static Set<User> users;
-    public static HashSet<String> loggedInUsers = new HashSet<String>();
-    private static HashSet<Inet4Address> blockedIps = new HashSet<Inet4Address>();
+    public static final Set<User> users;
+    public static Set<String> loggedInUsers = Collections.synchronizedSet(new HashSet<String>());
+    private static Set<InetAddress> blockedIps = Collections.synchronizedSet(new HashSet<InetAddress>());
     private int loginAttempts = 0;
 
     static
@@ -27,12 +29,12 @@ public class Authenticator
 
     public boolean authenticateUser(User user)
     {
-        return !isIpBlocked() && !isUserAlreadyLoggedIn(user) && authenticatesSuccessfully(user);
+        return !isUserAlreadyLoggedIn(user) && authenticatesSuccessfully(user);
     }
 
-    public boolean isIpBlocked()
+    public boolean isIpBlocked(Socket socket)
     {
-        return false;
+        return blockedIps.contains(socket.getInetAddress());
     }
 
     public boolean isUserAlreadyLoggedIn(User user)

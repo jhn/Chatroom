@@ -15,7 +15,7 @@ import java.util.concurrent.Executors;
 public class Server
 {
     private final int port;
-    private final Authenticator auth;
+    private final Validator validator;
     private static Set<User> currentUsers = Collections.synchronizedSet(new HashSet<User>());
     private static Set<PrintWriter> writers = Collections.synchronizedSet(new HashSet<PrintWriter>());
     private static final Executor threadPool = Executors.newFixedThreadPool(10);
@@ -23,7 +23,7 @@ public class Server
     public Server(int port)
     {
         this.port = port;
-        this.auth = new Authenticator();
+        this.validator = new Validator();
     }
 
     public void start() throws IOException
@@ -39,7 +39,10 @@ public class Server
     private void spawnOnConnection(ServerSocket listener) throws IOException
     {
         final Socket clientSocket = listener.accept();
-        threadPool.execute(new Runner(clientSocket));
+        if (!this.validator.isIpBlocked(clientSocket))
+        {
+            threadPool.execute(new Runner(clientSocket));
+        }
     }
 
     private class Runner implements Runnable
@@ -67,7 +70,7 @@ public class Server
                 String password = this.in.readLine();
                 this.user = new User(username, password);
 
-                if (username == null || password == null || !auth.authenticateUser(user))
+                if (username == null || password == null || !validator.authenticateUser(user))
                 {
                     return;
                 }
