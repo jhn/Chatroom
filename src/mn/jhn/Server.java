@@ -6,7 +6,9 @@ import java.io.InputStreamReader;
 import java.io.PrintWriter;
 import java.net.ServerSocket;
 import java.net.Socket;
+import java.util.Collections;
 import java.util.HashSet;
+import java.util.Set;
 import java.util.concurrent.Executor;
 import java.util.concurrent.Executors;
 
@@ -14,8 +16,8 @@ public class Server
 {
     private final int port;
     private final Authenticator auth;
-    private static HashSet<User> currentUsers = new HashSet<User>();
-    private static HashSet<PrintWriter> writers = new HashSet<PrintWriter>();
+    private static Set<User> currentUsers = Collections.synchronizedSet(new HashSet<User>());
+    private static Set<PrintWriter> writers = Collections.synchronizedSet(new HashSet<PrintWriter>());
     private static final Executor threadPool = Executors.newFixedThreadPool(10);
 
     public Server(int port)
