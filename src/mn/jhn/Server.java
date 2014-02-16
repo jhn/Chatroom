@@ -45,6 +45,7 @@ public class Server
         private final Socket socket;
         private final BufferedReader in;
         private final PrintWriter out;
+        private User user;
 
         public Runner(Socket clientSocket) throws IOException
         {
@@ -56,28 +57,31 @@ public class Server
         @Override
         public void run()
         {
-            String username = "";
-            String password = "";
             try
             {
                 this.out.println("Username: ");
-                username = this.in.readLine();
+                String username = this.in.readLine();
                 this.out.println("Password: ");
-                password = this.in.readLine();
+                String password = this.in.readLine();
+                this.user = new User(username, password);
 
-                if (username == null || password == null || !auth.authenticateUser(username, password))
+                if (username == null || password == null || !auth.authenticateUser(user))
                 {
                     return;
                 }
 
-                currentUsers.add(new User(username, password));
+                currentUsers.add(user);
+                writers.add(out);
 
                 out.println("Logged in.");
                 out.println("Welcome!");
-                writers.add(out);
 
                 while (true)
                 {
+                    // todo: really necessary?
+                    // todo: missing cleanup here
+                    // todo: maybe we could add "this" to the currentUsers set?
+                    // todo: or change the name to currentClient?
                     String message = in.readLine();
                     if (message == null)
                     {
@@ -95,10 +99,11 @@ public class Server
             }
             finally
             {
-                currentUsers.remove(new User(username, password));
+                // todo: extract this to a method?
+                currentUsers.remove(user);
+                writers.remove(out);
                 try
                 {
-                    writers.remove(out);
                     socket.close();
                 }
                 catch (IOException e)
@@ -106,6 +111,11 @@ public class Server
                     System.out.println("Couldn't close the socket: " + e);
                 }
             }
+        }
+
+        public void cleanUp()
+        {
+
         }
     }
 }

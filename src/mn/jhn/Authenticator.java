@@ -25,9 +25,9 @@ public class Authenticator
         }
     }
 
-    public boolean authenticateUser(String username, String password)
+    public boolean authenticateUser(User user)
     {
-        return !isIpBlocked() && !isUserAlreadyLoggedIn(username) && authenticatesSuccessfully(username, password);
+        return !isIpBlocked() && !isUserAlreadyLoggedIn(user) && authenticatesSuccessfully(user);
     }
 
     public boolean isIpBlocked()
@@ -35,19 +35,19 @@ public class Authenticator
         return false;
     }
 
-    public boolean isUserAlreadyLoggedIn(String username)
+    public boolean isUserAlreadyLoggedIn(User user)
     {
-        return loggedInUsers.contains(username);
+        return loggedInUsers.contains(user.getUsername());
     }
 
-    private boolean authenticatesSuccessfully(String username, String password)
+    private boolean authenticatesSuccessfully(User user)
     {
         while (this.loginAttempts <= MAX_LOGIN_ATTEMPS)
         {
-            if (users.contains(new User(username, password)))
+            if (users.contains(user))
             {
                 // todo: remove on close
-                loggedInUsers.add(username);
+                loggedInUsers.add(user.getUsername());
                 return true;
             }
             this.loginAttempts++;
