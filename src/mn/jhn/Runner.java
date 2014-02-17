@@ -6,6 +6,7 @@ import java.io.InputStreamReader;
 import java.io.PrintWriter;
 import java.net.Socket;
 import java.util.Date;
+import java.util.Set;
 
 public class Runner implements Runnable
 {
@@ -80,10 +81,11 @@ public class Runner implements Runnable
             while (true)
             {
                 String message = in.readLine();
-                if (message == null)
-                {
-                    return;
-                }
+                if (message == null) { this.out.println("Command not supported."); continue; }
+                String firstWord = message.split("\\s+")[0];
+                Set<String> commands = Command.getCommands();
+                if (!commands.contains(firstWord)) { this.out.println("Command not supported."); continue; }
+
                 for (PrintWriter writer : Server.getCurrentWriters())
                 {
                     writer.println(username + ": " + message);
