@@ -1,19 +1,14 @@
 package mn.jhn;
 
 import java.io.IOException;
-import java.net.InetAddress;
 import java.net.Socket;
-import java.util.Collections;
-import java.util.HashSet;
+import java.util.Date;
 import java.util.Set;
 
 public class Validator
 {
-    private static final int MAX_LOGIN_ATTEMPS = 3;
+    private static final int BLOCK_TIME = 60;
     public static final Set<User> users;
-    public static Set<String> loggedInUsers = Collections.synchronizedSet(new HashSet<String>());
-    private static Set<InetAddress> blockedIps = Collections.synchronizedSet(new HashSet<InetAddress>());
-    private int loginAttempts = 0;
 
     static
     {
@@ -27,34 +22,48 @@ public class Validator
         }
     }
 
-    public boolean authenticateUser(User user)
+    public static int getBlockTime()
     {
-        return !isUserAlreadyLoggedIn(user) && authenticatesSuccessfully(user);
+        return BLOCK_TIME;
     }
 
-    public boolean isIpBlocked(Socket socket)
+    public static boolean isIpBlocked(Socket socket)
     {
-        return blockedIps.contains(socket.getInetAddress());
-    }
-
-    public boolean isUserAlreadyLoggedIn(User user)
-    {
-        return loggedInUsers.contains(user.getUsername());
-    }
-
-    private boolean authenticatesSuccessfully(User user)
-    {
-        while (this.loginAttempts <= MAX_LOGIN_ATTEMPS)
+        Date blockTime = Server.getBlockedIps().get(socket.getInetAddress());
+        if (blockTime != null)
         {
-            if (users.contains(user))
+            Date now = new Date();
+            long seconds = (now.getTime() - blockTime.getTime()) / 1000;
+            if (seconds >= 60)
             {
-                // todo: remove on close
-                loggedInUsers.add(user.getUsername());
+                Server.getBlockedIps().remove(socket.getInetAddress());
+                return false;
+            }
+            else
+            {
                 return true;
             }
-            this.loginAttempts++;
         }
-        return false;
+        else
+        {
+            return false;
+        }
+    }
+
+    public static boolean validateCredentials(String username, String password)
+    {
+        return !(username == null || username.isEmpty()
+              || password == null || password.isEmpty());
+    }
+
+    public static boolean isLoggedIn(User user)
+    {
+        return Server.getLoggedInUsers().contains(user);
+    }
+
+    public static boolean authenticate(User user)
+    {
+        return users.contains(user);
     }
 
     public int getTotalUsers()

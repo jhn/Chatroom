@@ -4,26 +4,24 @@ import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.PrintWriter;
+import java.net.InetAddress;
 import java.net.ServerSocket;
 import java.net.Socket;
-import java.util.Collections;
-import java.util.HashSet;
-import java.util.Set;
+import java.util.*;
 import java.util.concurrent.Executor;
 import java.util.concurrent.Executors;
 
 public class Server
 {
     private final int port;
-    private final Validator validator;
-    private static Set<User> currentUsers = Collections.synchronizedSet(new HashSet<User>());
-    private static Set<PrintWriter> writers = Collections.synchronizedSet(new HashSet<PrintWriter>());
+    private static final Set<User> loggedInUsers = Collections.synchronizedSet(new HashSet<User>());
+    private static final Map<InetAddress, Date> blockedIps = Collections.synchronizedMap(new HashMap<InetAddress, Date>());
+    private static final Set<PrintWriter> currentWriters = Collections.synchronizedSet(new HashSet<PrintWriter>());
     private static final Executor threadPool = Executors.newFixedThreadPool(10);
 
     public Server(int port)
     {
         this.port = port;
-        this.validator = new Validator();
     }
 
     public void start() throws IOException
@@ -32,17 +30,31 @@ public class Server
         System.out.println("Listening on port " + this.port);
         while (true)
         {
-            spawnOnConnection(listener);
+            spawnThreadOnConnection(listener);
         }
     }
 
-    private void spawnOnConnection(ServerSocket listener) throws IOException
+    private void spawnThreadOnConnection(ServerSocket listener) throws IOException
     {
         final Socket clientSocket = listener.accept();
-        if (!this.validator.isIpBlocked(clientSocket))
+        if (Validator.isIpBlocked(clientSocket))
+        {
+            clientSocket.close();
+        }
+        else
         {
             threadPool.execute(new Runner(clientSocket));
         }
+    }
+
+    public static Set<User> getLoggedInUsers()
+    {
+        return loggedInUsers;
+    }
+
+    public static Map<InetAddress, Date> getBlockedIps()
+    {
+        return blockedIps;
     }
 
     private class Runner implements Runnable
@@ -54,9 +66,9 @@ public class Server
 
         public Runner(Socket clientSocket) throws IOException
         {
-            this.socket = clientSocket;
-            this.in     = new BufferedReader(new InputStreamReader(socket.getInputStream()));
-            this.out    = new PrintWriter(socket.getOutputStream(), true);
+            this.socket    = clientSocket;
+            this.in        = new BufferedReader(new InputStreamReader(socket.getInputStream()));
+            this.out       = new PrintWriter(socket.getOutputStream(), true);
         }
 
         @Override
@@ -64,35 +76,65 @@ public class Server
         {
             try
             {
-                this.out.println("Username: ");
-                String username = this.in.readLine();
-                this.out.println("Password: ");
-                String password = this.in.readLine();
-                this.user = new User(username, password);
-
-                if (username == null || password == null || !validator.authenticateUser(user))
+                User user;
+                String username = "";
+                String password = "";
+                int attempts = 3;
+                while (attempts > 0)
                 {
+                    this.out.println("Username: ");
+                    username = this.in.readLine();
+                    this.out.println("Password: ");
+                    password = this.in.readLine();
+
+                    if (!Validator.validateCredentials(username, password))
+                    {
+                        attempts--;
+                        this.out.println("Please enter a valid username / password.");
+                        this.out.println("You have " + attempts + " attempts remaining.");
+                    }
+                    else
+                    {
+                        user = new User(username, password);
+                        if (Validator.isLoggedIn(user))
+                        {
+                            this.out.println("This user is already logged in.");
+                            return;
+                        }
+                        if (Validator.authenticate(user))
+                        {
+                            this.user = user;
+                            break;
+                        }
+                        else
+                        {
+                            attempts--;
+                            this.out.println("Wrong username / password.");
+                            this.out.println("You have " + attempts + " attempts remaining.");
+                        }
+                    }
+                }
+
+                if (attempts == 0)
+                {
+                    Server.getBlockedIps().put(this.socket.getInetAddress(), new Date());
+                    this.out.println("You have been banned for " + Validator.getBlockTime() + " seconds.");
                     return;
                 }
 
-                currentUsers.add(user);
-                writers.add(out);
+                registerClient();
 
                 out.println("Logged in.");
                 out.println("Welcome!");
 
                 while (true)
                 {
-                    // todo: really necessary?
-                    // todo: missing cleanup here
-                    // todo: maybe we could add "this" to the currentUsers set?
-                    // todo: or change the name to currentClient?
                     String message = in.readLine();
                     if (message == null)
                     {
                         return;
                     }
-                    for (PrintWriter writer : writers)
+                    for (PrintWriter writer : currentWriters)
                     {
                         writer.println(username + ": " + message);
                     }
@@ -104,9 +146,7 @@ public class Server
             }
             finally
             {
-                // todo: extract this to a method?
-                currentUsers.remove(user);
-                writers.remove(out);
+                unregisterClient();
                 try
                 {
                     socket.close();
@@ -118,9 +158,19 @@ public class Server
             }
         }
 
-        public void cleanUp()
+        private void registerClient()
         {
+            loggedInUsers.add(this.user);
+            currentWriters.add(this.out);
+        }
 
+        private void unregisterClient()
+        {
+            if (this.user != null)
+            {
+                loggedInUsers.remove(this.user);
+            }
+            currentWriters.remove(this.out);
         }
     }
 }
