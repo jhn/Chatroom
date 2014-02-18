@@ -35,7 +35,7 @@ public class Server
     private void spawnThreadOnConnection(ServerSocket listener) throws IOException
     {
         final Socket clientSocket = listener.accept();
-        if (Validator.isIpBlocked(clientSocket))
+        if (Validator.isIpBlocked(clientSocket.getInetAddress()))
         {
             clientSocket.close();
         }

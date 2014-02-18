@@ -1,6 +1,7 @@
 package mn.jhn;
 
 import java.io.IOException;
+import java.net.InetAddress;
 import java.net.Socket;
 import java.util.Date;
 import java.util.Set;
@@ -27,16 +28,16 @@ public class Validator
         return BLOCK_TIME;
     }
 
-    public static boolean isIpBlocked(Socket socket)
+    public static boolean isIpBlocked(InetAddress ipAddress)
     {
-        Date blockTime = Server.getBlockedIps().get(socket.getInetAddress());
+        Date blockTime = Server.getBlockedIps().get(ipAddress);
         if (blockTime != null)
         {
             Date now = new Date();
             long seconds = (now.getTime() - blockTime.getTime()) / 1000;
             if (seconds >= 60)
             {
-                Server.getBlockedIps().remove(socket.getInetAddress());
+                Server.getBlockedIps().remove(ipAddress);
                 return false;
             }
             else
