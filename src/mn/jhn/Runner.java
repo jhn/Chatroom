@@ -29,7 +29,7 @@ public class Runner implements Runnable
         {
             User user;
             String username = "";
-            String password = "";
+            String password;
             int attempts = 3;
             while (attempts > 0)
             {
