@@ -1,8 +1,7 @@
-package mn.jhn;
+package mn.jhn.server;
 
 import java.io.IOException;
 import java.net.InetAddress;
-import java.net.Socket;
 import java.util.Date;
 import java.util.Set;
 

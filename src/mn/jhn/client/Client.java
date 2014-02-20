@@ -1,4 +1,4 @@
-package mn.jhn;
+package mn.jhn.client;
 
 public class Client
 {

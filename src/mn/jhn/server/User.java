@@ -1,4 +1,4 @@
-package mn.jhn;
+package mn.jhn.server;
 
 public class User
 {

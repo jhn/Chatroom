@@ -1,4 +1,4 @@
-package mn.jhn;
+package mn.jhn.server;
 
 import java.util.Collections;
 import java.util.HashSet;
