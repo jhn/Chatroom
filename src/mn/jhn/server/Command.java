@@ -15,6 +15,15 @@ public enum Command
     LOGOUT("logout");
 
     private final String command;
+    private final static Set<String> commands;
+    static
+    {
+        commands = Collections.unmodifiableSet(new HashSet<String>());
+        for (Command c : Command.values())
+        {
+            commands.add(c.toString());
+        }
+    }
 
     Command(String command)
     {
@@ -23,11 +32,6 @@ public enum Command
 
     public static Set<String> getCommands()
     {
-        final Set<String> commands = Collections.unmodifiableSet(new HashSet<String>());
-        for (Command c : Command.values())
-        {
-            commands.add(c.toString());
-        }
         return commands;
     }
 
