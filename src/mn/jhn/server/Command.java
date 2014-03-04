@@ -18,11 +18,12 @@ public enum Command
     private final static Set<String> commands;
     static
     {
-        commands = Collections.unmodifiableSet(new HashSet<String>());
+        commands = new HashSet<String>();
         for (Command c : Command.values())
         {
             commands.add(c.toString());
         }
+        Collections.unmodifiableSet(commands);
     }
 
     Command(String command)

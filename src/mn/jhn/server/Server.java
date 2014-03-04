@@ -12,10 +12,11 @@ import java.util.concurrent.Executors;
 public class Server
 {
     private final int port;
-    private static final Set<User> loggedInUsers = Collections.synchronizedSet(new HashSet<User>());
-    private static final Map<InetAddress, Date> blockedIps = Collections.synchronizedMap(new HashMap<InetAddress, Date>());
-    private static final Set<PrintWriter> currentWriters = Collections.synchronizedSet(new HashSet<PrintWriter>());
     private static final Executor threadPool = Executors.newFixedThreadPool(10);
+    private static final Set<User> loggedInUsers = Collections.synchronizedSet(new HashSet<User>());
+    private static final Set<PrintWriter> writers = Collections.synchronizedSet(new HashSet<PrintWriter>());
+    private static final Map<String, Map<InetAddress, Date>> blockedUsers =
+            Collections.synchronizedMap(new HashMap<String, Map<InetAddress, Date>>());
 
     public Server(int port)
     {
@@ -35,14 +36,7 @@ public class Server
     private void spawnThreadOnConnection(ServerSocket listener) throws IOException
     {
         final Socket clientSocket = listener.accept();
-        if (Validator.isIpBlocked(clientSocket.getInetAddress()))
-        {
-            clientSocket.close();
-        }
-        else
-        {
-            threadPool.execute(new Runner(clientSocket));
-        }
+        threadPool.execute(new ClientHandler(clientSocket));
     }
 
     public static Set<User> getLoggedInUsers()
@@ -50,13 +44,14 @@ public class Server
         return loggedInUsers;
     }
 
-    public static Map<InetAddress, Date> getBlockedIps()
+    public static Set<PrintWriter> getWriters()
     {
-        return blockedIps;
+        return writers;
     }
 
-    public static Set<PrintWriter> getCurrentWriters()
+    public static Map<String, Map<InetAddress, Date>> getBlockedUsers()
     {
-        return currentWriters;
+        return blockedUsers;
     }
+
 }
