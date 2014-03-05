@@ -42,68 +42,31 @@ public class ClientHandler implements Runnable
         {
             String username;
             String password;
-            boolean authenticated = false;
+            boolean validUsername = false;
+            boolean validUsernamePassword = false;
 
-            while (!authenticated)
+            while (!validUsernamePassword)
             {
                 /* Username authentication */
 
                 this.out.println("Username: ");
                 username = this.in.readLine();
 
-                if (Validator.userExists(username))
+                while (!validUsername)
                 {
-                    // Fill in our username->IP map field so we can use it later
-                    this.usernameIpMap = new HashMap<String, InetAddress>(1);
-                    this.usernameIpMap.put(username, this.socket.getInetAddress());
-
-                    if (Validator.isUserBlockedForIp(username, this.socket.getInetAddress()))
-                    {
-                        this.out.println("User baned. Wait " + Validator.getBlockTime() + " seconds.");
-                        continue;
-                    }
-                    if (Validator.isUserLoggedIn(username))
-                    {
-                        this.out.println("User is already logged in.");
-                        continue;
-                    }
-                    // Initialize attempt counter for username->IP
-                    loginAttempts.putIfAbsent(this.usernameIpMap, new AtomicInteger(0));
-                }
-                else
-                {
-                    this.out.println("Username not valid.");
-                    continue;
+                    validUsername = validateUsername(username);
                 }
 
-                /* Password authentication */
+                /* Username-Password authentication */
 
                 this.out.println("Password: ");
                 password = this.in.readLine();
 
-                if (Validator.authenticate(username, password))
-                {
-                    this.user = new User(username, password);
-                    authenticated = true;
-                }
-                else
-                {
-                    // Atomically increment the attempt counter
-                    loginAttempts.get(this.usernameIpMap).getAndIncrement();
-                    this.out.println("Wrong Password.");
-                }
+                validUsernamePassword = validatePassword(username, password);
 
-                // Get the AtomicInteger, then get the actual int
-                if (loginAttempts.get(this.usernameIpMap).get() >= Validator.getMaxLoginAttemps())
+                if (userHasNoMoreAttempts())
                 {
-                    // Record ban time for IP and add it to the username list
-                    // todo: synchronized block? it's 4 am; can't think very well
-                    Map<InetAddress, Date> addressToDateMap = new HashMap<InetAddress, Date>();
-                    addressToDateMap.put(this.socket.getInetAddress(), new Date());
-                    Auditor.getBlockedUsers().put(username, addressToDateMap);
-                    this.out.println("You have been banned for " + Validator.getBlockTime() + " seconds.");
-                    // reset the attempt count
-                    loginAttempts.get(this.usernameIpMap).getAndSet(0);
+                    banCurrentUser(username);
                 }
             }
 
@@ -136,6 +99,68 @@ public class ClientHandler implements Runnable
                 System.out.println("Couldn't close the socket: " + e);
             }
         }
+    }
+
+    private boolean validateUsername(String username)
+    {
+        if (Validator.userExists(username))
+        {
+            // Fill in our username->IP map field so we can use it later
+            this.usernameIpMap = new HashMap<String, InetAddress>(1);
+            this.usernameIpMap.put(username, this.socket.getInetAddress());
+
+            if (Validator.isUserBlockedForIp(username, this.socket.getInetAddress()))
+            {
+                this.out.println("User baned. Wait " + Validator.getBlockTime() + " seconds.");
+                return false;
+            }
+            if (Validator.isUserLoggedIn(username))
+            {
+                this.out.println("User is already logged in.");
+                return false;
+            }
+            // Initialize attempt counter for username->IP
+            loginAttempts.putIfAbsent(this.usernameIpMap, new AtomicInteger(0));
+        }
+        else
+        {
+            this.out.println("Username not valid.");
+            return false;
+        }
+        return true;
+    }
+
+    private boolean validatePassword(String username, String password)
+    {
+        if (Validator.authenticate(username, password))
+        {
+            this.user = new User(username, password);
+            return true;
+        }
+        else
+        {
+            // Atomically increment the attempt counter
+            loginAttempts.get(this.usernameIpMap).getAndIncrement();
+            this.out.println("Wrong Password.");
+            return false;
+        }
+    }
+
+    private boolean userHasNoMoreAttempts()
+    {
+        return loginAttempts.get(this.usernameIpMap).get() >= Validator.getMaxLoginAttemps();
+    }
+
+    private void banCurrentUser(String username)
+    {
+        // Record ban time for IP and add it to the username list
+        // todo: synchronized block? it's 4 am; can't think very well
+        Map<InetAddress, Date> addressToDateMap = new HashMap<InetAddress, Date>();
+        addressToDateMap.put(this.socket.getInetAddress(), new Date());
+        Auditor.getBlockedUsers().put(username, addressToDateMap);
+        this.out.println("You have been banned for " + Validator.getBlockTime() + " seconds.");
+        // reset the attempt count
+        loginAttempts.get(this.usernameIpMap).getAndSet(0);
     }
 
     private void handleUserInput(String userInput)
