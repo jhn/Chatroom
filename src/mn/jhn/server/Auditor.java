@@ -11,8 +11,7 @@ public class Auditor
     private static final Set<User> loggedInUsers;
     private static final Set<PrintWriter> writers;
     private static final Map<String, Map<InetAddress, Date>> blockedUsers;
-
-    private static final Map<User, Date> loggedOutUsers;
+    private static final Map<String, Date> loggedOutUsers;
 
     static
     {
@@ -25,7 +24,7 @@ public class Auditor
             throw new RuntimeException("Couldn't load users.");
         }
         loggedInUsers  = Collections.synchronizedSet(new HashSet<User>());
-        loggedOutUsers = Collections.synchronizedMap(new HashMap<User, Date>());
+        loggedOutUsers = Collections.synchronizedMap(new HashMap<String, Date>());
         writers        = Collections.synchronizedSet(new HashSet<PrintWriter>());
         blockedUsers   = Collections.synchronizedMap(new HashMap<String, Map<InetAddress, Date>>());
     }
@@ -40,7 +39,7 @@ public class Auditor
         return loggedInUsers;
     }
 
-    public static Map<User, Date> getLoggedOutUsers()
+    public static Map<String, Date> getLoggedOutUsers()
     {
         return loggedOutUsers;
     }
@@ -66,7 +65,7 @@ public class Auditor
         if (user != null)
         {
             loggedInUsers.remove(user);
-            loggedOutUsers.put(user, new Date());
+            loggedOutUsers.put(user.getUsername(), new Date());
         }
         writers.remove(out);
     }

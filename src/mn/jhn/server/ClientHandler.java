@@ -6,10 +6,7 @@ import java.io.InputStreamReader;
 import java.io.PrintWriter;
 import java.net.InetAddress;
 import java.net.Socket;
-import java.util.Arrays;
-import java.util.Date;
-import java.util.HashMap;
-import java.util.Map;
+import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -219,9 +216,18 @@ public class ClientHandler implements Runnable
         this.out.println("Should send message.");
     }
 
+    // todo: should not display current user
     private synchronized void wholasthr(String[] tokenizedInput)
     {
-
+        this.out.println("Users in the last hour: ");
+        Date now = new Date();
+        for (Map.Entry<String, Date> entry : Auditor.getLoggedOutUsers().entrySet())
+        {
+            if (now.getTime() - entry.getValue().getTime() / (60 * 1000) % 60 < 60)
+            {
+                this.out.println(entry.getKey());
+            }
+        }
     }
 
     // todo: validation on tokenizedInput
@@ -235,6 +241,7 @@ public class ClientHandler implements Runnable
         }
     }
 
+    // todo: create a join method for the array
     private synchronized void broadcast(String[] tokenizedInput)
     {
         for (PrintWriter writer : Auditor.getWriters())

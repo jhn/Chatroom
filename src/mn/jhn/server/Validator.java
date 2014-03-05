@@ -22,7 +22,8 @@ public class Validator
             {
 //                IP has a block time
                 Date now = new Date();
-                long seconds = (now.getTime() - blockTime.getTime()) / 1000;
+                long diff = now.getTime() - blockTime.getTime();
+                long seconds = diff / 1000 % 60;
                 if (seconds >= BLOCK_TIME)
                 {
 //                    todo: probably should be synchronized; it's 4 am, fix me
