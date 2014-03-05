@@ -100,7 +100,7 @@ public class ClientHandler implements Runnable
                     // todo: synchronized block? it's 4 am; can't think very well
                     Map<InetAddress, Date> addressToDateMap = new HashMap<InetAddress, Date>();
                     addressToDateMap.put(this.socket.getInetAddress(), new Date());
-                    Server.getBlockedUsers().put(username, addressToDateMap);
+                    Auditor.getBlockedUsers().put(username, addressToDateMap);
                     this.out.println("You have been banned for " + Validator.getBlockTime() + " seconds.");
                     // reset the attempt count
                     loginAttempts.get(this.usernameIpMap).getAndSet(0);
@@ -199,14 +199,20 @@ public class ClientHandler implements Runnable
 
     }
 
+    // todo: validation on tokenizedInput
+    // todo: should not display current user
     private synchronized void whoelse(String[] tokenizedInput)
     {
-        
+        for (User u : Auditor.getLoggedInUsers())
+        {
+            this.out.println("Logged in users: ");
+            this.out.println(u.getUsername());
+        }
     }
 
     private synchronized void broadcast(String[] tokenizedInput)
     {
-        for (PrintWriter writer : Server.getWriters())
+        for (PrintWriter writer : Auditor.getWriters())
         {
             writer.println(this.user.getUsername() + ": " + Arrays.toString(tokenizedInput));
         }
@@ -214,17 +220,17 @@ public class ClientHandler implements Runnable
 
     private synchronized void registerClient()
     {
-        Server.getLoggedInUsers().add(this.user);
-        Server.getWriters().add(this.out);
+        Auditor.getLoggedInUsers().add(this.user);
+        Auditor.getWriters().add(this.out);
     }
 
     private synchronized void unregisterClient()
     {
         if (this.user != null)
         {
-            Server.getLoggedInUsers().remove(this.user);
+            Auditor.getLoggedInUsers().remove(this.user);
         }
-        Server.getWriters().remove(this.out);
+        Auditor.getWriters().remove(this.out);
     }
 
 }
