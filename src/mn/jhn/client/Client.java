@@ -13,10 +13,19 @@ public class Client
         String host = args[0];
         int port    = Integer.parseInt(args[1]);
 
-        Socket socket = new Socket(host, port);
-        PrintWriter out = new PrintWriter(socket.getOutputStream(), true);
-        BufferedReader in = new BufferedReader(new InputStreamReader(socket.getInputStream()));
-        BufferedReader stdIn = new BufferedReader(new InputStreamReader(System.in));
+        final Socket socket = new Socket(host, port);
+        final PrintWriter out = new PrintWriter(socket.getOutputStream(), true);
+        final BufferedReader in = new BufferedReader(new InputStreamReader(socket.getInputStream()));
+        final BufferedReader stdIn = new BufferedReader(new InputStreamReader(System.in));
+
+        // To finish gracefully on interrupt signal
+        Runtime.getRuntime().addShutdownHook(new Thread() {
+            public void run()
+            {
+                System.out.println("Trying to unregister");
+                out.println("logout");
+            }
+        });
 
         String userInput;
         while (true)

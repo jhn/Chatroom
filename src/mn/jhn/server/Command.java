@@ -6,15 +6,16 @@ import java.util.Set;
 
 public enum Command
 {
-    WHOELSE("whoelse"),
-    WHOLASTHR("wholasthr"),
-    BROADCAST("broadcast"),
-    MESSAGE("message"),
-    BLOCK("block"),
-    UNBLOCK("unblock"),
-    LOGOUT("logout");
+    WHOELSE("whoelse", 0),
+    WHOLASTHR("wholasthr", 0),
+    BROADCAST("broadcast", 1),
+    MESSAGE("message", 2),
+    BLOCK("block", 1),
+    UNBLOCK("unblock", 1),
+    LOGOUT("logout", 0);
 
-    private final String command;
+    private final String name;
+    private final int arity;
     private final static Set<String> commands;
     static
     {
@@ -26,9 +27,10 @@ public enum Command
         Collections.unmodifiableSet(commands);
     }
 
-    Command(String command)
+    Command(String name, int arity)
     {
-        this.command = command;
+        this.name = name;
+        this.arity = arity;
     }
 
     public static Set<String> getCommands()
@@ -36,9 +38,31 @@ public enum Command
         return commands;
     }
 
+    public String getName()
+    {
+        return name;
+    }
+
+    public int getArity()
+    {
+        return arity;
+    }
+
+    public static Command getCommand(String name)
+    {
+        for (Command c : Command.values())
+        {
+            if (c.getName().equals(name))
+            {
+                return c;
+            }
+        }
+        return null;
+    }
+
     @Override
     public String toString()
     {
-        return command;
+        return name;
     }
 }

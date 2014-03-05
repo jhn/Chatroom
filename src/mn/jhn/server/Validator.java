@@ -9,7 +9,7 @@ import java.util.Set;
 
 public class Validator
 {
-    private static final int BLOCK_TIME = 60;
+    private static final int BLOCK_TIME = 10;
     private static final int MAX_LOGIN_ATTEMPS = 3;
     private static final Set<User> users;
 
@@ -38,7 +38,7 @@ public class Validator
 //                IP has a block time
                 Date now = new Date();
                 long seconds = (now.getTime() - blockTime.getTime()) / 1000;
-                if (seconds >= 60)
+                if (seconds >= BLOCK_TIME)
                 {
 //                    todo: probably should be synchronized; it's 4 am, fix me
                     // Let's eliminate the ip->date map from the collection

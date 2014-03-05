@@ -4,12 +4,10 @@ import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.PrintWriter;
+import java.lang.reflect.Array;
 import java.net.InetAddress;
 import java.net.Socket;
-import java.util.Date;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -40,7 +38,7 @@ public class ClientHandler implements Runnable
     {
         try
         {
-            String username = "";
+            String username;
             String password;
             boolean authenticated = false;
 
@@ -60,6 +58,7 @@ public class ClientHandler implements Runnable
                     if (Validator.isUserBlockedForIp(username, this.socket.getInetAddress()))
                     {
                         this.out.println("User baned. Wait " + Validator.getBlockTime() + " seconds.");
+                        continue;
                     }
                     if (Validator.isUserLoggedIn(username))
                     {
@@ -89,6 +88,7 @@ public class ClientHandler implements Runnable
                 {
                     // Atomically increment the attempt counter
                     loginAttempts.get(this.usernameIpMap).getAndIncrement();
+                    this.out.println("Wrong Password.");
                 }
 
                 // Get the AtomicInteger, then get the actual int
@@ -100,6 +100,8 @@ public class ClientHandler implements Runnable
                     addressToDateMap.put(this.socket.getInetAddress(), new Date());
                     Server.getBlockedUsers().put(username, addressToDateMap);
                     this.out.println("You have been banned for " + Validator.getBlockTime() + " seconds.");
+                    // reset the attempt count
+                    loginAttempts.get(this.usernameIpMap).getAndSet(0);
                 }
             }
 
@@ -108,30 +110,16 @@ public class ClientHandler implements Runnable
             out.println("Logged in.");
             out.println("Welcome!");
 
-            while (true)
+            String userInput = in.readLine();
+            while (!"logout".equals(userInput))
             {
-                String message = in.readLine();
-                if (message == null)
-                {
-                    this.out.println("Command not supported.");
-                    continue;
-                }
-                String firstWord = message.split("\\s+")[0];
-                Set<String> commands = Command.getCommands();
-                if (!commands.contains(firstWord))
-                {
-                    this.out.println("Command not supported.");
-                    continue;
-                }
-
-                for (PrintWriter writer : Server.getWriters())
-                {
-                    writer.println(username + ": " + message);
-                }
+                handleUserInput(userInput);
+                userInput = in.readLine();
             }
         }
-        catch (IOException e)
+        catch (Exception e)
         {
+            System.out.println("A thing happened.");
             e.printStackTrace();
         }
         finally
@@ -145,6 +133,79 @@ public class ClientHandler implements Runnable
             {
                 System.out.println("Couldn't close the socket: " + e);
             }
+        }
+    }
+
+    private void handleUserInput(String userInput)
+    {
+        if (userInput == null)
+        {
+            this.out.println("Null command.");
+            return;
+        }
+
+        String[] tokenizedInput = userInput.split("\\s+");
+        String userCommand = tokenizedInput[0];
+
+        if (!Command.getCommands().contains(userCommand))
+        {
+            this.out.println("Command not supported.");
+            return;
+        }
+
+        dispatchCommand(Command.getCommand(userCommand), tokenizedInput);
+    }
+
+    private void dispatchCommand(Command command, String[] tokenizedInput)
+    {
+        switch (command)
+        {
+            case WHOELSE:   whoelse(tokenizedInput);   break;
+            case WHOLASTHR: wholasthr(tokenizedInput); break;
+            case BROADCAST: broadcast(tokenizedInput); break;
+            case MESSAGE:   message(tokenizedInput);   break;
+            case BLOCK:     block(tokenizedInput);     break;
+            case UNBLOCK:   unblock(tokenizedInput);   break;
+            case LOGOUT:    logout(tokenizedInput);    break;
+        }
+    }
+
+    private void logout(String[] tokenizedInput)
+    {
+        this.out.println("Bye!");
+        unregisterClient();
+    }
+
+    private void unblock(String[] tokenizedInput)
+    {
+        this.out.println("Should unblock.");
+    }
+
+    private void block(String[] tokenizedInput)
+    {
+        this.out.println("Should block.");
+    }
+
+    private void message(String[] tokenizedInput)
+    {
+        this.out.println("Should send message.");
+    }
+
+    private void wholasthr(String[] tokenizedInput)
+    {
+
+    }
+
+    private void whoelse(String[] tokenizedInput)
+    {
+        this.out.println("Should print whoelse.");
+    }
+
+    private void broadcast(String[] tokenizedInput)
+    {
+        for (PrintWriter writer : Server.getWriters())
+        {
+            writer.println(this.user.getUsername() + ": " + Arrays.toString(tokenizedInput));
         }
     }
 
@@ -162,4 +223,5 @@ public class ClientHandler implements Runnable
         }
         Server.getWriters().remove(this.out);
     }
+
 }
