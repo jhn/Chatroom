@@ -22,13 +22,8 @@ public class Server
         System.out.println("Listening on port " + this.port);
         while (true)
         {
-            spawnThreadOnConnection(listener);
+            final Socket clientSocket = listener.accept();
+            threadPool.execute(new ClientHandler(clientSocket));
         }
-    }
-
-    private void spawnThreadOnConnection(ServerSocket listener) throws IOException
-    {
-        final Socket clientSocket = listener.accept();
-        threadPool.execute(new ClientHandler(clientSocket));
     }
 }
