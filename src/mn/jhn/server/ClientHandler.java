@@ -4,10 +4,12 @@ import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.PrintWriter;
-import java.lang.reflect.Array;
 import java.net.InetAddress;
 import java.net.Socket;
-import java.util.*;
+import java.util.Arrays;
+import java.util.Date;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -186,22 +188,23 @@ public class ClientHandler implements Runnable
         this.out.println("Should block.");
     }
 
+    // todo: should be able to send message to non-logged in users
     private void message(String[] tokenizedInput)
     {
         this.out.println("Should send message.");
     }
 
-    private void wholasthr(String[] tokenizedInput)
+    private synchronized void wholasthr(String[] tokenizedInput)
     {
 
     }
 
-    private void whoelse(String[] tokenizedInput)
+    private synchronized void whoelse(String[] tokenizedInput)
     {
-        this.out.println("Should print whoelse.");
+        
     }
 
-    private void broadcast(String[] tokenizedInput)
+    private synchronized void broadcast(String[] tokenizedInput)
     {
         for (PrintWriter writer : Server.getWriters())
         {
@@ -209,13 +212,13 @@ public class ClientHandler implements Runnable
         }
     }
 
-    private void registerClient()
+    private synchronized void registerClient()
     {
         Server.getLoggedInUsers().add(this.user);
         Server.getWriters().add(this.out);
     }
 
-    private void unregisterClient()
+    private synchronized void unregisterClient()
     {
         if (this.user != null)
         {
