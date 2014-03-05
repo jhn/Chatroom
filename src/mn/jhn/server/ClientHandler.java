@@ -245,17 +245,11 @@ public class ClientHandler implements Runnable
 
     private synchronized void registerClient()
     {
-        Auditor.getLoggedInUsers().add(this.user);
-        Auditor.getWriters().add(this.out);
+        Auditor.registerClient(this.user, this.out);
     }
 
     private synchronized void unregisterClient()
     {
-        if (this.user != null)
-        {
-            Auditor.getLoggedInUsers().remove(this.user);
-        }
-        Auditor.getWriters().remove(this.out);
+        Auditor.unregisterClient(this.user, this.out);
     }
-
 }

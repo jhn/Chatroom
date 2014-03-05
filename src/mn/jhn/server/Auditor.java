@@ -12,6 +12,8 @@ public class Auditor
     private static final Set<PrintWriter> writers;
     private static final Map<String, Map<InetAddress, Date>> blockedUsers;
 
+    private static final Map<User, Date> loggedOutUsers;
+
     static
     {
         try
@@ -22,9 +24,10 @@ public class Auditor
         {
             throw new RuntimeException("Couldn't load users.");
         }
-        loggedInUsers = Collections.synchronizedSet(new HashSet<User>());
-        writers = Collections.synchronizedSet(new HashSet<PrintWriter>());
-        blockedUsers = Collections.synchronizedMap(new HashMap<String, Map<InetAddress, Date>>());
+        loggedInUsers  = Collections.synchronizedSet(new HashSet<User>());
+        loggedOutUsers = Collections.synchronizedMap(new HashMap<User, Date>());
+        writers        = Collections.synchronizedSet(new HashSet<PrintWriter>());
+        blockedUsers   = Collections.synchronizedMap(new HashMap<String, Map<InetAddress, Date>>());
     }
 
     public synchronized static Set<User> getUsers()
@@ -37,6 +40,11 @@ public class Auditor
         return loggedInUsers;
     }
 
+    public static Map<User, Date> getLoggedOutUsers()
+    {
+        return loggedOutUsers;
+    }
+
     public static Set<PrintWriter> getWriters()
     {
         return writers;
@@ -45,5 +53,21 @@ public class Auditor
     public static Map<String, Map<InetAddress, Date>> getBlockedUsers()
     {
         return blockedUsers;
+    }
+
+    public synchronized static void registerClient(User user, PrintWriter out)
+    {
+        loggedInUsers.add(user);
+        writers.add(out);
+    }
+
+    public synchronized static void unregisterClient(User user, PrintWriter out)
+    {
+        if (user != null)
+        {
+            loggedInUsers.remove(user);
+            loggedOutUsers.put(user, new Date());
+        }
+        writers.remove(out);
     }
 }
