@@ -154,7 +154,7 @@ public class ClientHandler implements Runnable
         // todo: synchronized block? it's 4 am; can't think very well
         Map<InetAddress, Date> addressToDateMap = new HashMap<InetAddress, Date>();
         addressToDateMap.put(this.socket.getInetAddress(), new Date());
-        Auditor.getBlockedUsers().put(username, addressToDateMap);
+        Auditor.getServerBlocks().put(username, addressToDateMap);
         this.out.println("You have been banned for " + Validator.getBlockTime() + " seconds.");
         // reset the attempt count
         loginAttempts.get(this.usernameIpMap).getAndSet(0);

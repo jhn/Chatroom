@@ -12,7 +12,7 @@ public class Validator
 
     public static boolean isUserBlockedForIp(String username, InetAddress ip)
     {
-        Map<InetAddress, Date> ipToDateMap = Auditor.getBlockedUsers().get(username);
+        Map<InetAddress, Date> ipToDateMap = Auditor.getServerBlocks().get(username);
 
         if (ipToDateMap != null)
         {
@@ -28,7 +28,7 @@ public class Validator
                 {
 //                    todo: probably should be synchronized; it's 4 am, fix me
                     // Let's eliminate the ip->date map from the collection
-                    Auditor.getBlockedUsers().get(username).remove(ip);
+                    Auditor.getServerBlocks().get(username).remove(ip);
                     return false;
                 }
                 else

@@ -10,8 +10,9 @@ public class Auditor
     private static final Set<User> users;
     private static final Set<User> loggedInUsers;
     private static final Set<PrintWriter> writers;
-    private static final Map<String, Map<InetAddress, Date>> blockedUsers;
+    private static final Map<String, Map<InetAddress, Date>> serverBlocks;
     private static final Map<String, Date> loggedOutUsers;
+    private static final Map<String, List<String>> userBlocks;
 
     static
     {
@@ -26,7 +27,8 @@ public class Auditor
         loggedInUsers  = Collections.synchronizedSet(new HashSet<User>());
         loggedOutUsers = Collections.synchronizedMap(new HashMap<String, Date>());
         writers        = Collections.synchronizedSet(new HashSet<PrintWriter>());
-        blockedUsers   = Collections.synchronizedMap(new HashMap<String, Map<InetAddress, Date>>());
+        userBlocks     = Collections.synchronizedMap(new HashMap<String, List<String>>());
+        serverBlocks   = Collections.synchronizedMap(new HashMap<String, Map<InetAddress, Date>>());
     }
 
     public synchronized static Set<User> getUsers()
@@ -49,9 +51,9 @@ public class Auditor
         return writers;
     }
 
-    public static Map<String, Map<InetAddress, Date>> getBlockedUsers()
+    public static Map<String, Map<InetAddress, Date>> getServerBlocks()
     {
-        return blockedUsers;
+        return serverBlocks;
     }
 
     public synchronized static void registerClient(User user, PrintWriter out)
@@ -68,5 +70,31 @@ public class Auditor
             loggedOutUsers.put(user.getUsername(), new Date());
         }
         writers.remove(out);
+    }
+
+    public synchronized static void blockFromTo(String blocker, String blockee)
+    {
+        if (userBlocks.containsKey(blocker))
+        {
+            userBlocks.get(blocker).add(blockee);
+        }
+        else
+        {
+            ArrayList<String> blockedUsers = new ArrayList<String>();
+            blockedUsers.add(blockee);
+            userBlocks.put(blocker, blockedUsers);
+        }
+    }
+
+    public synchronized static void unblockFromTo(String blocker, String blockee)
+    {
+        if (userBlocks.containsKey(blocker))
+        {
+            List<String> blockees = userBlocks.get(blocker);
+            if (blockees.contains(blockee))
+            {
+                blockees.remove(blockee);
+            }
+        }
     }
 }
