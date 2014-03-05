@@ -8,12 +8,9 @@ import java.util.*;
 public class Auditor
 {
     private static final Set<User> users;
-    private static final Set<User> loggedInUsers =
-            Collections.synchronizedSet(new HashSet<User>());
-    private static final Set<PrintWriter> writers =
-            Collections.synchronizedSet(new HashSet<PrintWriter>());
-    private static final Map<String, Map<InetAddress, Date>> blockedUsers =
-            Collections.synchronizedMap(new HashMap<String, Map<InetAddress, Date>>());
+    private static final Set<User> loggedInUsers;
+    private static final Set<PrintWriter> writers;
+    private static final Map<String, Map<InetAddress, Date>> blockedUsers;
 
     static
     {
@@ -25,6 +22,9 @@ public class Auditor
         {
             throw new RuntimeException("Couldn't load users.");
         }
+        loggedInUsers = Collections.synchronizedSet(new HashSet<User>());
+        writers = Collections.synchronizedSet(new HashSet<PrintWriter>());
+        blockedUsers = Collections.synchronizedMap(new HashMap<String, Map<InetAddress, Date>>());
     }
 
     public synchronized static Set<User> getUsers()
