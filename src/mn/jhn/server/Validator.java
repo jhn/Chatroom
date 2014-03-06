@@ -20,14 +20,13 @@ public class Validator
             Date blockTime = ipToDateMap.get(ip);
             if (blockTime != null)
             {
-//                IP has a block time
+                // IP has a block time
                 Date now = new Date();
                 long diff = now.getTime() - blockTime.getTime();
                 long seconds = diff / 1000 % 60;
                 if (seconds >= BLOCK_TIME)
                 {
-//                    todo: probably should be synchronized; it's 4 am, fix me
-                    // Let's eliminate the ip->date map from the collection
+                    // Unblock it
                     Auditor.getServerBlocks().get(username).remove(ip);
                     return false;
                 }
@@ -40,7 +39,6 @@ public class Validator
         return false;
     }
 
-    // TODO: precompute all userNames and throw them into a set for fast retrieval
     public static boolean userExists(String username)
     {
         return isUsernameInCollection(Auditor.getUsers(), username);

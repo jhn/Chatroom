@@ -28,4 +28,15 @@ public class Utils
         br.close();
         return Collections.unmodifiableSet(users);
     }
+
+    public static String join(String[] input)
+    {
+        StringBuilder sb = new StringBuilder();
+        for(String value : input)
+        {
+            sb.append(value);
+            sb.append(" ");
+        }
+        return sb.toString();
+    }
 }

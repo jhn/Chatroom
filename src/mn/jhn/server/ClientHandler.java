@@ -254,7 +254,7 @@ public class ClientHandler implements Runnable
     {
         for (PrintWriter writer : Auditor.getWriters())
         {
-            writer.println(">" + this.user.getUsername() + ": " + Arrays.toString(tokenizedInput));
+            writer.println(">" + this.user.getUsername() + ": " + Utils.join(tokenizedInput));
         }
     }
 
