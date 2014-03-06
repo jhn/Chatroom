@@ -11,31 +11,38 @@ public class Client
     public static void main(String[] args) throws IOException
     {
         String host = args[0];
-        int port    = Integer.parseInt(args[1]);
+        int    port = Integer.parseInt(args[1]);
 
-        final Socket socket = new Socket(host, port);
-        final PrintWriter out = new PrintWriter(socket.getOutputStream(), true);
-        final BufferedReader in = new BufferedReader(new InputStreamReader(socket.getInputStream()));
-        final BufferedReader stdIn = new BufferedReader(new InputStreamReader(System.in));
-
-        // To finish gracefully on interrupt signal
-        Runtime.getRuntime().addShutdownHook(new Thread() {
-            public void run()
-            {
-                System.out.println("Trying to unregister");
-                out.println("logout");
-            }
-        });
+        final Socket         socket = new Socket(host, port);
+        final PrintWriter    out    = new PrintWriter(socket.getOutputStream(), true);
+        final BufferedReader in     = new BufferedReader(new InputStreamReader(socket.getInputStream()));
+        final BufferedReader stdIn  = new BufferedReader(new InputStreamReader(System.in));
 
         String userInput;
-        while (true)
+        try
         {
-            userInput = stdIn.readLine();
-            if (userInput != null)
+            while (true)
             {
-                out.println(userInput);
-                System.out.println(in.readLine());
+                userInput = stdIn.readLine();
+                if (userInput != null)
+                {
+                    out.println(userInput);
+                    String socketInput = in.readLine();
+                    if (socketInput == null)
+                    {
+                        break;
+                    }
+                    System.out.println(socketInput);
+                }
             }
+        }
+        catch (Exception e)
+        {
+            System.out.println("Cleaning up...");
+        }
+        finally
+        {
+            socket.close();
         }
     }
 }
