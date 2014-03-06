@@ -75,7 +75,7 @@ public class ClientHandler implements Runnable
             checkForPendingMessages(username);
 
             String userInput = in.readLine();
-            while (true)
+            while (userInput != null)
             {
                 handleUserInput(userInput);
                 userInput = in.readLine();
@@ -84,7 +84,6 @@ public class ClientHandler implements Runnable
         catch (Exception e)
         {
             System.out.println("Exception handled gracefully " + e);
-            e.printStackTrace();
         }
         finally
         {
@@ -173,12 +172,6 @@ public class ClientHandler implements Runnable
 
     private void handleUserInput(String userInput)
     {
-        if (userInput == null)
-        {
-            this.out.println(">Null command.");
-            return;
-        }
-
         String[] tokenizedInput = userInput.split("\\s+");
         String userCommand = tokenizedInput[0];
 
@@ -304,7 +297,6 @@ public class ClientHandler implements Runnable
         }
     }
 
-    // todo: make sure this is actually what they want
     private void wholasthr(String[] tokenizedInput)
     {
         if (tokenizedInput.length != 1)
@@ -318,7 +310,7 @@ public class ClientHandler implements Runnable
             Set<String> usersInLastHour = new HashSet<String>();
             for (Map.Entry<String, Date> entry : Auditor.getLoggedOutUsers().entrySet())
             {
-                if ((now.getTime() - entry.getValue().getTime()) / (60 * 1000) % 60 < 60)
+                if ((now.getTime() - entry.getValue().getTime()) / 1000 % 60 < Validator.getLastHour())
                 {
                     usersInLastHour.add(entry.getKey());
                 }
