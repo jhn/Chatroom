@@ -305,7 +305,7 @@ public class ClientHandler implements Runnable
     }
 
     // todo: make sure this is actually what they want
-    private synchronized void wholasthr(String[] tokenizedInput)
+    private void wholasthr(String[] tokenizedInput)
     {
         if (tokenizedInput.length != 1)
         {
@@ -332,7 +332,7 @@ public class ClientHandler implements Runnable
         }
     }
 
-    private synchronized void whoelse(String[] tokenizedInput)
+    private void whoelse(String[] tokenizedInput)
     {
         if (tokenizedInput.length != 1)
         {
@@ -350,7 +350,7 @@ public class ClientHandler implements Runnable
         }
     }
 
-    private synchronized void broadcast(String[] tokenizedInput)
+    private void broadcast(String[] tokenizedInput)
     {
         Set<PrintWriter> writers = Auditor.getWriters();
         writers.remove(this.out);
@@ -363,12 +363,12 @@ public class ClientHandler implements Runnable
         }
     }
 
-    private synchronized void registerClient()
+    private void registerClient()
     {
         Auditor.registerClient(this.user, this.out);
     }
 
-    private synchronized void unregisterClient()
+    private void unregisterClient()
     {
         Auditor.unregisterClient(this.user);
         try
