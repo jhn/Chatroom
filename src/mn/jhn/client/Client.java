@@ -5,14 +5,11 @@ import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.PrintWriter;
 import java.net.Socket;
-import java.util.concurrent.Executors;
-import java.util.concurrent.ScheduledExecutorService;
-import java.util.concurrent.ScheduledFuture;
-import java.util.concurrent.TimeUnit;
+import java.util.concurrent.*;
 
 public class Client
 {
-    private static final int TIME_OUT = 1800; // in seconds
+    private static final int TIME_OUT = 20; // in seconds
 
     public static void main(String[] args) throws IOException
     {
@@ -24,32 +21,30 @@ public class Client
         final BufferedReader in     = new BufferedReader(new InputStreamReader(socket.getInputStream()));
         final BufferedReader stdIn  = new BufferedReader(new InputStreamReader(System.in));
 
-        ScheduledExecutorService timer = Executors.newSingleThreadScheduledExecutor();
+        ScheduledExecutorService timer      = Executors.newSingleThreadScheduledExecutor();
+        ExecutorService serverInputExecutor = Executors.newSingleThreadExecutor();
 
         String userInput;
         try
         {
             while (true)
             {
-                String socketInput = in.readLine();
-                if (socketInput != null)
-                {
-                    System.out.println(socketInput);
-                }
-                else
-                {
-                    break;
-                }
+                // Thread that reads from the server and outputs to stdout
+                serverInputExecutor.execute(new ServerHandler(in));
 
-                // create timer for logging out innactive users
-                ScheduledFuture<?> task = timer.schedule(new Interrupter(socket), TIME_OUT, TimeUnit.SECONDS);
+                // Thread that logs out innactive clients
+                ScheduledFuture<?> task = timer.schedule(
+                        new Terminator(socket, in, out, stdIn),
+                        TIME_OUT,
+                        TimeUnit.SECONDS
+                );
 
                 userInput = stdIn.readLine();
 
                 // cancel timer if input read
                 task.cancel(true);
 
-                if (userInput != null)
+                if (userInput != null && !socket.isClosed())
                 {
                     out.println(userInput);
                 }
@@ -61,15 +56,28 @@ public class Client
         }
         catch (Exception e)
         {
-            System.out.println("Cleaning up...");
+            System.out.println("Terminating gracefully...");
             System.out.println(e);
             e.printStackTrace();
+            System.out.println("Done!");
         }
         finally
         {
             try
             {
-                socket.close();
+                if (!socket.isClosed())
+                {
+                    socket.close();
+                }
+                if (!timer.isShutdown())
+                {
+                    timer.shutdownNow();
+                }
+                if (!serverInputExecutor.isShutdown())
+                {
+                    serverInputExecutor.shutdownNow();
+                }
+                System.exit(0);
             }
             catch (IOException e)
             {
@@ -77,13 +85,19 @@ public class Client
         }
     }
 
-    private static class Interrupter implements Runnable
+    private static class Terminator implements Runnable
     {
         private final Socket socket;
+        private final BufferedReader in;
+        private final PrintWriter out;
+        private final BufferedReader stdIn;
 
-        public Interrupter(Socket s)
+        public Terminator(Socket s, BufferedReader in, PrintWriter out, BufferedReader stdIn)
         {
             this.socket = s;
+            this.in     = in;
+            this.out    = out;
+            this.stdIn  = stdIn;
         }
 
         @Override
@@ -92,12 +106,57 @@ public class Client
             try
             {
                 System.out.println("Closing socket for inactivity.");
-                socket.close();
-                System.exit(0);
+                terminateConnection();
             }
             catch (IOException e)
             {
-                e.printStackTrace();
+            }
+        }
+
+        private void terminateConnection() throws IOException
+        {
+            socket.close();
+            out.println("logout");
+        }
+    }
+
+    private static class ServerHandler implements Runnable
+    {
+        private final BufferedReader in;
+
+        public ServerHandler(BufferedReader socketInput)
+        {
+            this.in = socketInput;
+        }
+
+        @Override
+        public void run()
+        {
+            String socketInput;
+
+            try
+            {
+                socketInput = in.readLine();
+                while(socketInput != null)
+                {
+                    System.out.println(socketInput);
+                    socketInput = in.readLine();
+                }
+            }
+            catch (IOException e)
+            {
+            }
+            finally
+            {
+                try
+                {
+                    in.close();
+                    System.exit(0);
+                }
+                catch (IOException e)
+                {
+                    e.printStackTrace();
+                }
             }
         }
     }
