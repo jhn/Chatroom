@@ -10,7 +10,6 @@ public class Validator
     private static final int BLOCK_TIME = 60;
     private static final int MAX_LOGIN_ATTEMPS = 3;
     private static final int LAST_HOUR = 3600; // in seconds
-    private static final int TIME_OUT = 1800; // in seconds
 
     public static boolean isUserBlockedForIp(String username, InetAddress ip)
     {
@@ -91,10 +90,5 @@ public class Validator
     public static int getLastHour()
     {
         return LAST_HOUR;
-    }
-
-    public static int getTimeOut()
-    {
-        return TIME_OUT;
     }
 }
