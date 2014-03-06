@@ -37,26 +37,26 @@ public class ClientHandler implements Runnable
     {
         try
         {
-            String username;
+            String username = "";
             String password;
-            boolean validUsername = false;
+            boolean validUsername;
             boolean validUsernamePassword = false;
 
             while (!validUsernamePassword)
             {
                 /* Username authentication */
 
-                this.out.println("Username: ");
-                username = this.in.readLine();
-
+                validUsername = false;
                 while (!validUsername)
                 {
+                    this.out.println(">Username: ");
+                    username = this.in.readLine();
                     validUsername = validateUsername(username);
                 }
 
                 /* Username-Password authentication */
 
-                this.out.println("Password: ");
+                this.out.println(">Password: ");
                 password = this.in.readLine();
 
                 validUsernamePassword = validatePassword(username, password);
@@ -69,11 +69,11 @@ public class ClientHandler implements Runnable
 
             registerClient();
 
-            out.println("Logged in.");
-            out.println("Welcome!");
+            out.println(">Logged in.");
+            out.println(">Welcome!");
 
             String userInput = in.readLine();
-            while (!"logout".equals(userInput))
+            while (true)
             {
                 handleUserInput(userInput);
                 userInput = in.readLine();
@@ -81,20 +81,11 @@ public class ClientHandler implements Runnable
         }
         catch (Exception e)
         {
-            System.out.println("A thing happened.");
-            e.printStackTrace();
+            System.out.println("Exception handled gracefully " + e);
         }
         finally
         {
             unregisterClient();
-            try
-            {
-                socket.close();
-            }
-            catch (IOException e)
-            {
-                System.out.println("Couldn't close the socket: " + e);
-            }
         }
     }
 
@@ -108,12 +99,12 @@ public class ClientHandler implements Runnable
 
             if (Validator.isUserBlockedForIp(username, this.socket.getInetAddress()))
             {
-                this.out.println("User baned. Wait " + Validator.getBlockTime() + " seconds.");
+                this.out.println(">User baned. Wait " + Validator.getBlockTime() + " seconds.");
                 return false;
             }
             if (Validator.isUserLoggedIn(username))
             {
-                this.out.println("User is already logged in.");
+                this.out.println(">User is already logged in.");
                 return false;
             }
             // Initialize attempt counter for username->IP
@@ -121,7 +112,7 @@ public class ClientHandler implements Runnable
         }
         else
         {
-            this.out.println("Username not valid.");
+            this.out.println(">Username not valid.");
             return false;
         }
         return true;
@@ -138,7 +129,7 @@ public class ClientHandler implements Runnable
         {
             // Atomically increment the attempt counter
             loginAttempts.get(this.usernameIpMap).getAndIncrement();
-            this.out.println("Wrong Password.");
+            this.out.println(">Wrong Password.");
             return false;
         }
     }
@@ -151,37 +142,37 @@ public class ClientHandler implements Runnable
     private void banCurrentUser(String username)
     {
         // Record ban time for IP and add it to the username list
-        // todo: synchronized block? it's 4 am; can't think very well
         Map<InetAddress, Date> addressToDateMap = new HashMap<InetAddress, Date>();
         addressToDateMap.put(this.socket.getInetAddress(), new Date());
         Auditor.getServerBlocks().put(username, addressToDateMap);
-        this.out.println("You have been banned for " + Validator.getBlockTime() + " seconds.");
+
         // reset the attempt count
         loginAttempts.get(this.usernameIpMap).getAndSet(0);
+
+        this.out.println(">You have been banned for " + Validator.getBlockTime() + " seconds.");
     }
 
     private void handleUserInput(String userInput)
     {
         if (userInput == null)
         {
-            this.out.println("Null command.");
+            this.out.println(">Null command.");
             return;
         }
 
         String[] tokenizedInput = userInput.split("\\s+");
         String userCommand = tokenizedInput[0];
 
-        if (!Command.getCommands().contains(userCommand))
-        {
-            this.out.println("Command not supported.");
-            return;
-        }
-
         dispatchCommand(Command.getCommand(userCommand), tokenizedInput);
     }
 
     private void dispatchCommand(Command command, String[] tokenizedInput)
     {
+        if (command == null)
+        {
+            notSupported();
+            return;
+        }
         switch (command)
         {
             case WHOELSE:   whoelse(tokenizedInput);   break;
@@ -194,50 +185,67 @@ public class ClientHandler implements Runnable
         }
     }
 
+    private void notSupported()
+    {
+        this.out.println(">Command not supported");
+    }
+
     private void logout(String[] tokenizedInput)
     {
-        this.out.println("Bye!");
+        this.out.println(">Bye!");
         unregisterClient();
     }
 
+    // TODO: Actually handle tokenized input
     private void unblock(String[] tokenizedInput)
     {
-        this.out.println("Should unblock.");
+        Auditor.unblockFromTo(this.user.getUsername(), tokenizedInput[1]);
+        this.out.println(">Should unblock.");
     }
 
+    // TODO: should be checked before sending PMs
     private void block(String[] tokenizedInput)
     {
+        Auditor.blockFromTo(this.user.getUsername(), "CHANGEME");
         this.out.println("Should block.");
     }
 
     // todo: should be able to send message to non-logged in users
     private void message(String[] tokenizedInput)
     {
+//        if () // if username is not blocked from current user
         this.out.println("Should send message.");
     }
 
-    // todo: should not display current user
     private synchronized void wholasthr(String[] tokenizedInput)
     {
-        this.out.println("Users in the last hour: ");
+        this.out.println(">Users in the last hour: ");
         Date now = new Date();
+        Set<String> usersInLastHour = new HashSet<String>();
         for (Map.Entry<String, Date> entry : Auditor.getLoggedOutUsers().entrySet())
         {
-            if (now.getTime() - entry.getValue().getTime() / (60 * 1000) % 60 < 60)
+            if ((now.getTime() - entry.getValue().getTime()) / (60 * 1000) % 60 < 60)
             {
-                this.out.println(entry.getKey());
+                usersInLastHour.add(entry.getKey());
             }
+        }
+        usersInLastHour.addAll(Auditor.getLoggedInUsers());
+        usersInLastHour.remove(user.getUsername());
+        for (String u : usersInLastHour)
+        {
+            this.out.println(u);
         }
     }
 
     // todo: validation on tokenizedInput
-    // todo: should not display current user
     private synchronized void whoelse(String[] tokenizedInput)
     {
-        for (User u : Auditor.getLoggedInUsers())
+        this.out.println(">Logged in users:");
+        Set<String> loggedInUsers = Auditor.getLoggedInUsers();
+        loggedInUsers.remove(this.user.getUsername());
+        for (String username : loggedInUsers)
         {
-            this.out.println("Logged in users: ");
-            this.out.println(u.getUsername());
+            this.out.println(username);
         }
     }
 
@@ -246,7 +254,7 @@ public class ClientHandler implements Runnable
     {
         for (PrintWriter writer : Auditor.getWriters())
         {
-            writer.println(this.user.getUsername() + ": " + Arrays.toString(tokenizedInput));
+            writer.println(">" + this.user.getUsername() + ": " + Arrays.toString(tokenizedInput));
         }
     }
 
@@ -258,5 +266,12 @@ public class ClientHandler implements Runnable
     private synchronized void unregisterClient()
     {
         Auditor.unregisterClient(this.user, this.out);
+        try
+        {
+            socket.close();
+        }
+        catch (IOException e)
+        {
+        }
     }
 }

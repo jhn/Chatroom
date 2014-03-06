@@ -8,9 +8,9 @@ import java.util.*;
 public class Auditor
 {
     private static final Set<User> users;
-    private static final Set<User> loggedInUsers;
     private static final Set<PrintWriter> writers;
     private static final Map<String, Map<InetAddress, Date>> serverBlocks;
+    private static final Set<String> loggedInUsers;
     private static final Map<String, Date> loggedOutUsers;
     private static final Map<String, List<String>> userBlocks;
 
@@ -24,7 +24,7 @@ public class Auditor
         {
             throw new RuntimeException("Couldn't load users.");
         }
-        loggedInUsers  = Collections.synchronizedSet(new HashSet<User>());
+        loggedInUsers  = Collections.synchronizedSet(new HashSet<String>());
         loggedOutUsers = Collections.synchronizedMap(new HashMap<String, Date>());
         writers        = Collections.synchronizedSet(new HashSet<PrintWriter>());
         userBlocks     = Collections.synchronizedMap(new HashMap<String, List<String>>());
@@ -33,17 +33,23 @@ public class Auditor
 
     public synchronized static Set<User> getUsers()
     {
-        return Collections.unmodifiableSet(users);
+        HashSet<User> copy = new HashSet<User>();
+        copy.addAll(users);
+        return copy;
     }
 
-    public static Set<User> getLoggedInUsers()
+    public static Set<String> getLoggedInUsers()
     {
-        return loggedInUsers;
+        HashSet<String> copy = new HashSet<String>();
+        copy.addAll(loggedInUsers);
+        return copy;
     }
 
     public static Map<String, Date> getLoggedOutUsers()
     {
-        return loggedOutUsers;
+        HashMap<String, Date> copy = new HashMap<String, Date>();
+        copy.putAll(loggedOutUsers);
+        return copy;
     }
 
     public static Set<PrintWriter> getWriters()
@@ -58,7 +64,7 @@ public class Auditor
 
     public synchronized static void registerClient(User user, PrintWriter out)
     {
-        loggedInUsers.add(user);
+        loggedInUsers.add(user.getUsername());
         writers.add(out);
     }
 
@@ -66,7 +72,7 @@ public class Auditor
     {
         if (user != null)
         {
-            loggedInUsers.remove(user);
+            loggedInUsers.remove(user.getUsername());
             loggedOutUsers.put(user.getUsername(), new Date());
         }
         writers.remove(out);
