@@ -258,7 +258,6 @@ public class ClientHandler implements Runnable
         }
     }
 
-    // todo: try sending blank pm, also shouldn't be able to msg myself
     private void message(String[] tokenizedInput)
     {
         if (tokenizedInput.length < 3)
@@ -266,7 +265,13 @@ public class ClientHandler implements Runnable
             this.out.println(">Usage: message <user> <message>");
             return;
         }
+
         String targetUser = tokenizedInput[1];
+        if (targetUser.equals(this.user.getUsername()))
+        {
+            this.out.println(">You can't message yourself.");
+            return;
+        }
 
         if(Validator.userExists(targetUser))
         {
