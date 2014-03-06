@@ -46,12 +46,7 @@ public class Validator
 
     public static boolean isUserLoggedIn(String username)
     {
-        return Auditor.getLoggedInUsers().contains(username);
-    }
-
-    public static boolean userIsLoggedIn(User user)
-    {
-        return Auditor.getLoggedInUsers().contains(user.getUsername());
+        return Auditor.getLoggedInUsers().containsKey(username);
     }
 
     private static boolean isUsernameInCollection(Collection<User> c, String username)

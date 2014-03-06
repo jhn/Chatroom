@@ -17,6 +17,7 @@ public enum Command
     private final String name;
     private final int arity;
     private final static Set<String> commands;
+
     static
     {
         commands = new HashSet<String>();

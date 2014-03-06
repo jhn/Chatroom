@@ -72,6 +72,8 @@ public class ClientHandler implements Runnable
             out.println(">Logged in.");
             out.println(">Welcome!");
 
+            checkForPendingMessages(username);
+
             String userInput = in.readLine();
             while (true)
             {
@@ -82,10 +84,27 @@ public class ClientHandler implements Runnable
         catch (Exception e)
         {
             System.out.println("Exception handled gracefully " + e);
+            e.printStackTrace();
         }
         finally
         {
             unregisterClient();
+        }
+    }
+
+    private void checkForPendingMessages(String username)
+    {
+        Map<String, List<String>> pendingMessages = MessageQueue.pendingMessagesForUser(username);
+        if (pendingMessages != null)
+        {
+            for(Map.Entry<String, List<String>> entry: pendingMessages.entrySet()) {
+                String sender = entry.getKey();
+                List<String> messages = entry.getValue();
+                for (String message : messages)
+                {
+                    this.out.println(">" + sender + ": " + message);
+                }
+            }
         }
     }
 
@@ -192,69 +211,150 @@ public class ClientHandler implements Runnable
 
     private void logout(String[] tokenizedInput)
     {
-        this.out.println(">Bye!");
-        unregisterClient();
+        if (tokenizedInput.length != 1)
+        {
+            this.out.println(">This commands takes no arguments");
+        }
+        else
+        {
+            this.out.println(">Bye!");
+            unregisterClient();
+        }
     }
 
-    // TODO: Actually handle tokenized input
     private void unblock(String[] tokenizedInput)
     {
-        Auditor.unblockFromTo(this.user.getUsername(), tokenizedInput[1]);
-        this.out.println(">Should unblock.");
+        if (tokenizedInput.length != 2)
+        {
+            this.out.println(">Usage: unblock <user>");
+        }
+
+        String targetUser = tokenizedInput[1];
+
+        if(Validator.userExists(targetUser))
+        {
+            Auditor.unblockFromTo(this.user.getUsername(), targetUser);
+        }
+        else
+        {
+            this.out.println(">User " + targetUser + " does not exist");
+        }
     }
 
-    // TODO: should be checked before sending PMs
     private void block(String[] tokenizedInput)
     {
-        Auditor.blockFromTo(this.user.getUsername(), "CHANGEME");
-        this.out.println("Should block.");
+        if (tokenizedInput.length != 2)
+        {
+            this.out.println(">Syntax: block <user>");
+        }
+        String targetUser = tokenizedInput[1];
+        if(Validator.userExists(targetUser))
+        {
+            Auditor.blockFromTo(this.user.getUsername(), targetUser);
+        }
+        else
+        {
+            this.out.println(">User " + targetUser + " does not exist");
+        }
     }
 
-    // todo: should be able to send message to non-logged in users
+    // todo: try sending blank pm, also shouldn't be able to msg myself
     private void message(String[] tokenizedInput)
     {
-//        if () // if username is not blocked from current user
-        this.out.println("Should send message.");
-    }
-
-    private synchronized void wholasthr(String[] tokenizedInput)
-    {
-        this.out.println(">Users in the last hour: ");
-        Date now = new Date();
-        Set<String> usersInLastHour = new HashSet<String>();
-        for (Map.Entry<String, Date> entry : Auditor.getLoggedOutUsers().entrySet())
+        if (tokenizedInput.length < 3)
         {
-            if ((now.getTime() - entry.getValue().getTime()) / (60 * 1000) % 60 < 60)
+            this.out.println(">Usage: message <user> <message>");
+            return;
+        }
+        String targetUser = tokenizedInput[1];
+
+        if(Validator.userExists(targetUser))
+        {
+            if (!Auditor.userIsBlocked(targetUser, this.user.getUsername()))
             {
-                usersInLastHour.add(entry.getKey());
+                // Save the message
+                String[] message = Arrays.copyOfRange(tokenizedInput, 2, tokenizedInput.length);
+                String messageString = Utils.join(message);
+
+                // Either the user is online and we send, or is offline and we queue
+                if (Auditor.getLoggedInUsers().containsKey(targetUser))
+                {
+                    PrintWriter userWriter = Auditor.getLoggedInUsers().get(targetUser);
+                    userWriter.println(">" + this.user.getUsername() + ": " + messageString);
+                }
+                else
+                {
+                    MessageQueue.addOfflineMessage(targetUser, this.user.getUsername(), messageString);
+                    this.out.println(">User offline. Message queued.");
+                }
+            }
+            else
+            {
+                this.out.println(">" + targetUser + " has blocked you.");
             }
         }
-        usersInLastHour.addAll(Auditor.getLoggedInUsers());
-        usersInLastHour.remove(user.getUsername());
-        for (String u : usersInLastHour)
+        else
         {
-            this.out.println(u);
+            this.out.println(">User " + targetUser + " does not exist");
         }
     }
 
-    // todo: validation on tokenizedInput
+    // todo: make sure this is actually what they want
+    private synchronized void wholasthr(String[] tokenizedInput)
+    {
+        if (tokenizedInput.length != 1)
+        {
+            this.out.println(">This command takes no arguments");
+        }
+        else
+        {
+            this.out.println(">Users in the last hour: ");
+            Date now = new Date();
+            Set<String> usersInLastHour = new HashSet<String>();
+            for (Map.Entry<String, Date> entry : Auditor.getLoggedOutUsers().entrySet())
+            {
+                if ((now.getTime() - entry.getValue().getTime()) / (60 * 1000) % 60 < 60)
+                {
+                    usersInLastHour.add(entry.getKey());
+                }
+            }
+            usersInLastHour.addAll(Auditor.getLoggedInUsernames());
+            usersInLastHour.remove(user.getUsername());
+            for (String u : usersInLastHour)
+            {
+                this.out.println(u);
+            }
+        }
+    }
+
     private synchronized void whoelse(String[] tokenizedInput)
     {
-        this.out.println(">Logged in users:");
-        Set<String> loggedInUsers = Auditor.getLoggedInUsers();
-        loggedInUsers.remove(this.user.getUsername());
-        for (String username : loggedInUsers)
+        if (tokenizedInput.length != 1)
         {
-            this.out.println(username);
+            this.out.println(">This command takes no arguments");
+        }
+        else
+        {
+            this.out.println(">Logged in users:");
+            Set<String> loggedInUsers = Auditor.getLoggedInUsernames();
+            loggedInUsers.remove(this.user.getUsername());
+            for (String username : loggedInUsers)
+            {
+                this.out.println(username);
+            }
         }
     }
 
-    // todo: create a join method for the array
     private synchronized void broadcast(String[] tokenizedInput)
     {
-        for (PrintWriter writer : Auditor.getWriters())
+        Set<PrintWriter> writers = Auditor.getWriters();
+        writers.remove(this.out);
+        // Save the message
+        String[] message = Arrays.copyOfRange(tokenizedInput, 1, tokenizedInput.length);
+        String messageString = Utils.join(message);
+        for (PrintWriter writer : writers)
         {
-            writer.println(">" + this.user.getUsername() + ": " + Utils.join(tokenizedInput));
+            writer.println(">" + this.user.getUsername() + ": " + messageString);
         }
     }
 
@@ -265,7 +365,7 @@ public class ClientHandler implements Runnable
 
     private synchronized void unregisterClient()
     {
-        Auditor.unregisterClient(this.user, this.out);
+        Auditor.unregisterClient(this.user);
         try
         {
             socket.close();
