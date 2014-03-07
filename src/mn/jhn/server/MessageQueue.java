@@ -21,15 +21,15 @@ public class MessageQueue
             // receiver already has messages form this particular sender
             if (senderToMessageMap.containsKey(sender))
             {
-                List<String> messages = senderToMessageMap.get(sender);
-                messages.add(message);
+                List<String> previousMessagesFromSender = senderToMessageMap.get(sender);
+                previousMessagesFromSender.add(message);
             }
             // create new List for this sender and put the message in
             else
             {
-                List<String> messages = new ArrayList<String>();
-                messages.add(message);
-                senderToMessageMap.put(sender, messages);
+                List<String> messagesFromSender = new ArrayList<String>();
+                messagesFromSender.add(message);
+                senderToMessageMap.put(sender, messagesFromSender);
                 MessageQueue.messages.put(receiver, senderToMessageMap);
             }
         }
