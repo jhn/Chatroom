@@ -96,12 +96,14 @@ public class ClientHandler implements Runnable
         Map<String, List<String>> pendingMessages = MessageQueue.pendingMessagesForUser(username);
         if (pendingMessages != null)
         {
-            for(Map.Entry<String, List<String>> entry: pendingMessages.entrySet()) {
-                String sender = entry.getKey();
-                List<String> messages = entry.getValue();
+            for(Map.Entry<String, List<String>> messagesFromSender: pendingMessages.entrySet())
+            {
+                String sender = messagesFromSender.getKey();
+                List<String> messages = messagesFromSender.getValue();
                 for (String message : messages)
                 {
                     this.out.println(">" + sender + ": " + message);
+                    messages.remove(message);
                 }
             }
         }
