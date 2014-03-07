@@ -1,6 +1,6 @@
 JAVAC=javac
 
-default: client server
+default: server client 
 
 server:
 	javac src/mn/jhn/server/*.java
