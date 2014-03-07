@@ -13,7 +13,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 public class ClientHandler implements Runnable
 {
-    private static final ConcurrentMap<Map<String, InetAddress>, AtomicInteger> loginAttempts;
+    private static final ConcurrentMap<Map<String, InetAddress>, AtomicInteger> LOGIN_ATTEMPTS_FOR_USER;
     private HashMap<String, InetAddress> usernameIpMap;
     private final Socket socket;
     private final BufferedReader in;
@@ -22,7 +22,7 @@ public class ClientHandler implements Runnable
 
     static
     {
-        loginAttempts = new ConcurrentHashMap<Map<String, InetAddress>, AtomicInteger>();
+        LOGIN_ATTEMPTS_FOR_USER = new ConcurrentHashMap<Map<String, InetAddress>, AtomicInteger>();
     }
 
     public ClientHandler(Socket clientSocket) throws IOException
@@ -126,7 +126,7 @@ public class ClientHandler implements Runnable
                 return false;
             }
             // Initialize attempt counter for username->IP
-            loginAttempts.putIfAbsent(this.usernameIpMap, new AtomicInteger(0));
+            LOGIN_ATTEMPTS_FOR_USER.putIfAbsent(this.usernameIpMap, new AtomicInteger(0));
         }
         else
         {
@@ -146,7 +146,7 @@ public class ClientHandler implements Runnable
         else
         {
             // Atomically increment the attempt counter
-            loginAttempts.get(this.usernameIpMap).getAndIncrement();
+            LOGIN_ATTEMPTS_FOR_USER.get(this.usernameIpMap).getAndIncrement();
             this.out.println(">Wrong Password.");
             return false;
         }
@@ -154,7 +154,7 @@ public class ClientHandler implements Runnable
 
     private boolean userHasNoMoreAttempts()
     {
-        return loginAttempts.get(this.usernameIpMap).get() >= Validator.getMaxLoginAttemps();
+        return LOGIN_ATTEMPTS_FOR_USER.get(this.usernameIpMap).get() >= Validator.getMaxLoginAttemps();
     }
 
     private void banCurrentUser(String username)
@@ -165,7 +165,7 @@ public class ClientHandler implements Runnable
         Auditor.getServerBlocks().put(username, addressToDateMap);
 
         // reset the attempt count
-        loginAttempts.get(this.usernameIpMap).getAndSet(0);
+        LOGIN_ATTEMPTS_FOR_USER.get(this.usernameIpMap).getAndSet(0);
 
         this.out.println(">You have been banned for " + Validator.getBlockTime() + " seconds.");
     }

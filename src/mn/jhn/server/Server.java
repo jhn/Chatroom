@@ -9,7 +9,7 @@ import java.util.concurrent.Executors;
 public class Server
 {
     private final int port;
-    private static final Executor threadPool = Executors.newFixedThreadPool(10);
+    private static final Executor THREAD_POOL = Executors.newFixedThreadPool(15);
 
     public Server(int port)
     {
@@ -23,7 +23,7 @@ public class Server
         while (true)
         {
             final Socket clientSocket = listener.accept();
-            threadPool.execute(new ClientHandler(clientSocket));
+            THREAD_POOL.execute(new ClientHandler(clientSocket));
         }
     }
 }

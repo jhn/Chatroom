@@ -16,16 +16,16 @@ public enum Command
 
     private final String name;
     private final int arity;
-    private final static Set<String> commands;
+    private final static Set<String> COMMANDS;
 
     static
     {
-        commands = new HashSet<String>();
+        COMMANDS = new HashSet<String>();
         for (Command c : Command.values())
         {
-            commands.add(c.toString());
+            COMMANDS.add(c.toString());
         }
-        Collections.unmodifiableSet(commands);
+        Collections.unmodifiableSet(COMMANDS);
     }
 
     Command(String name, int arity)
@@ -36,7 +36,7 @@ public enum Command
 
     public static Set<String> getCommands()
     {
-        return commands;
+        return COMMANDS;
     }
 
     public String getName()
