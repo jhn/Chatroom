@@ -103,10 +103,10 @@ public class ClientHandler implements Runnable
                 for (String message : messages)
                 {
                     this.out.println(">" + sender + ": " + message);
-                    messages.remove(message);
                 }
             }
         }
+        MessageQueue.emptyInboxForUser(username);
     }
 
     private boolean validateUsername(String username)
@@ -206,9 +206,10 @@ public class ClientHandler implements Runnable
 
     private void logout(String[] tokenizedInput)
     {
-        if (tokenizedInput.length != 1)
+        int argLength = tokenizedInput.length;
+        if (Command.checkArityForCommand(Command.LOGOUT, argLength))
         {
-            this.out.println(">This commands takes no arguments");
+            this.out.println(">This command takes no arguments");
         }
         else
         {
@@ -219,16 +220,33 @@ public class ClientHandler implements Runnable
 
     private void unblock(String[] tokenizedInput)
     {
-        if (tokenizedInput.length != 2)
+        int argLength = tokenizedInput.length;
+        if (Command.checkArityForCommand(Command.UNBLOCK, argLength))
         {
             this.out.println(">Usage: unblock <user>");
+            return;
         }
 
         String targetUser = tokenizedInput[1];
 
+        if (targetUser.equals(this.user.getUsername()))
+        {
+            this.out.println(">You can't unblock yourself!");
+            return;
+        }
+
         if(Validator.userExists(targetUser))
         {
-            Auditor.unblockFromTo(this.user.getUsername(), targetUser);
+            // User already blocked
+            if (Auditor.userIsBlocked(this.user.getUsername(), targetUser))
+            {
+                Auditor.unblockFromTo(this.user.getUsername(), targetUser);
+                this.out.println(">You have unblocked " + targetUser);
+            }
+            else
+            {
+                this.out.println("> " + targetUser + " not blocked");
+            }
         }
         else
         {
@@ -238,14 +256,33 @@ public class ClientHandler implements Runnable
 
     private void block(String[] tokenizedInput)
     {
-        if (tokenizedInput.length != 2)
+        int argLength = tokenizedInput.length;
+        if (Command.checkArityForCommand(Command.BLOCK, argLength))
         {
             this.out.println(">Syntax: block <user>");
+            return;
         }
+
         String targetUser = tokenizedInput[1];
+
+        if (targetUser.equals(this.user.getUsername()))
+        {
+            this.out.println(">You can't block yourself!");
+            return;
+        }
+
         if(Validator.userExists(targetUser))
         {
-            Auditor.blockFromTo(this.user.getUsername(), targetUser);
+            // User already blocked
+            if (Auditor.userIsBlocked(this.user.getUsername(), targetUser))
+            {
+                this.out.println("> " + targetUser + " is already blocked");
+            }
+            else
+            {
+                Auditor.blockFromTo(this.user.getUsername(), targetUser);
+                this.out.println(">You have blocked " + targetUser + " from sending you messages");
+            }
         }
         else
         {
@@ -255,13 +292,15 @@ public class ClientHandler implements Runnable
 
     private void message(String[] tokenizedInput)
     {
-        if (tokenizedInput.length < 3)
+        int argLength = tokenizedInput.length;
+        if (argLength < Command.MESSAGE.getArity())
         {
             this.out.println(">Usage: message <user> <message>");
             return;
         }
 
         String targetUser = tokenizedInput[1];
+
         if (targetUser.equals(this.user.getUsername()))
         {
             this.out.println(">You can't message yourself.");
@@ -273,7 +312,7 @@ public class ClientHandler implements Runnable
             if (!Auditor.userIsBlocked(targetUser, this.user.getUsername()))
             {
                 // Save the message
-                String[] message = Arrays.copyOfRange(tokenizedInput, 2, tokenizedInput.length);
+                String[] message = Arrays.copyOfRange(tokenizedInput, 2, argLength);
                 String messageString = Utils.join(message);
 
                 // Either the user is online and we send, or is offline and we queue
@@ -290,7 +329,7 @@ public class ClientHandler implements Runnable
             }
             else
             {
-                this.out.println(">" + targetUser + " has blocked you.");
+                this.out.println("> You cannot send any message to " + targetUser + ".  You have been blocked by the user.");
             }
         }
         else
@@ -301,7 +340,8 @@ public class ClientHandler implements Runnable
 
     private void wholasthr(String[] tokenizedInput)
     {
-        if (tokenizedInput.length != 1)
+        int argLength = tokenizedInput.length;
+        if (Command.checkArityForCommand(Command.WHOLASTHR, argLength))
         {
             this.out.println(">This command takes no arguments");
         }
@@ -310,6 +350,7 @@ public class ClientHandler implements Runnable
             this.out.println(">Users in the last hour: ");
             Date now = new Date();
             Set<String> usersInLastHour = new HashSet<String>();
+            // logged out users within LAST_HOUR
             for (Map.Entry<String, Date> entry : Auditor.getLoggedOutUsers().entrySet())
             {
                 if ((now.getTime() - entry.getValue().getTime()) / 1000 % 60 < Validator.getLastHour())
@@ -317,7 +358,9 @@ public class ClientHandler implements Runnable
                     usersInLastHour.add(entry.getKey());
                 }
             }
+            // plus all logged in usernames
             usersInLastHour.addAll(Auditor.getLoggedInUsernames());
+            // minus the current user
             usersInLastHour.remove(user.getUsername());
             for (String u : usersInLastHour)
             {
@@ -328,7 +371,8 @@ public class ClientHandler implements Runnable
 
     private void whoelse(String[] tokenizedInput)
     {
-        if (tokenizedInput.length != 1)
+        int argLength = tokenizedInput.length;
+        if (Command.checkArityForCommand(Command.WHOELSE, argLength))
         {
             this.out.println(">This command takes no arguments");
         }

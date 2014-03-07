@@ -49,4 +49,9 @@ public class MessageQueue
     {
         return messages.get(username);
     }
+
+    public synchronized static Map<String, List<String>> emptyInboxForUser(String username)
+    {
+        return messages.remove(username);
+    }
 }
