@@ -21,7 +21,9 @@ public class Client
         final BufferedReader in     = new BufferedReader(new InputStreamReader(socket.getInputStream()));
         final BufferedReader stdIn  = new BufferedReader(new InputStreamReader(System.in));
 
+        // executor that executes a task after a given time
         ScheduledExecutorService timer      = Executors.newSingleThreadScheduledExecutor();
+        // executor for handling input from the server and output to the client
         ExecutorService serverInputExecutor = Executors.newSingleThreadExecutor();
 
         String userInput;
@@ -29,19 +31,19 @@ public class Client
         {
             while (true)
             {
-                // Thread that reads from the server and outputs to stdout
+                // Initializes the server handler thread
                 serverInputExecutor.execute(new ServerHandler(in));
 
-                // Thread that logs out innactive clients
+                // Future that promises to run the task after TIME_OUT seconds...
                 ScheduledFuture<?> task = timer.schedule(
-                        new Terminator(socket, in, out, stdIn),
+                        new Terminator(socket, out),
                         TIME_OUT,
                         TimeUnit.SECONDS
                 );
 
                 userInput = stdIn.readLine();
 
-                // cancel timer if input read
+                // ...unless the user inputs something!
                 task.cancel(true);
 
                 if (userInput != null && !socket.isClosed())
@@ -85,19 +87,16 @@ public class Client
         }
     }
 
+    // terminates the client on user inactivity
     private static class Terminator implements Runnable
     {
         private final Socket socket;
-        private final BufferedReader in;
         private final PrintWriter out;
-        private final BufferedReader stdIn;
 
-        public Terminator(Socket s, BufferedReader in, PrintWriter out, BufferedReader stdIn)
+        public Terminator(Socket s, PrintWriter out)
         {
             this.socket = s;
-            this.in     = in;
             this.out    = out;
-            this.stdIn  = stdIn;
         }
 
         @Override
@@ -120,6 +119,7 @@ public class Client
         }
     }
 
+    // reads from the server and prints to the client
     private static class ServerHandler implements Runnable
     {
         private final BufferedReader in;

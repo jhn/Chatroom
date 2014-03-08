@@ -13,6 +13,7 @@ public class Utils
     {
     }
 
+    // reads the users from the file, transforms them into objects and returns them
     public static Set<User> loadUsersFromFile(String filePath) throws IOException
     {
         Set<User> users = new HashSet<User>();
@@ -29,6 +30,7 @@ public class Utils
         return Collections.unmodifiableSet(users);
     }
 
+    // joins strings arrays into a single string. useful for printing
     public static String join(String[] input)
     {
         StringBuilder sb = new StringBuilder();

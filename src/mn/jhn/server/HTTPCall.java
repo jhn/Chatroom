@@ -14,6 +14,7 @@ public class HTTPCall
     public String makeCall(String endpoint) throws Exception
     {
         URL url = new URL(endpoint);
+        // opens a connection to the endpoint, but it's lazy!
         HttpURLConnection con = (HttpURLConnection) url.openConnection();
         //add request header
         con.setRequestProperty("User-Agent", USER_AGENT);
@@ -26,6 +27,7 @@ public class HTTPCall
         BufferedReader in = new BufferedReader(new InputStreamReader(con.getInputStream()));
         String payload;
         StringBuffer response = new StringBuffer();
+        // actually reads from the connection
         while ((payload = in.readLine()) != null)
         {
             response.append(payload);

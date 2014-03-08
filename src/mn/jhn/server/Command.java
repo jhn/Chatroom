@@ -23,6 +23,7 @@ public enum Command
     private final String description;
     private final static Set<String> COMMANDS;
 
+    // Initializes list of command names
     static
     {
         COMMANDS = new HashSet<String>();

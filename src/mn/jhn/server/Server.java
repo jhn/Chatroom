@@ -16,6 +16,7 @@ public class Server
         this.port = port;
     }
 
+    // threads are reused when they finish their work
     public void start() throws IOException
     {
         ServerSocket listener = new ServerSocket(this.port);

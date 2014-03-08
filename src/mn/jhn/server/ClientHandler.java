@@ -20,7 +20,7 @@ public class ClientHandler implements Runnable
     private final PrintWriter out;
     private User user;
 
-
+    // Map to hold attempts to log in
     static
     {
         LOGIN_ATTEMPTS_FOR_USER = new ConcurrentHashMap<Map<String, InetAddress>, AtomicInteger>();
@@ -74,6 +74,7 @@ public class ClientHandler implements Runnable
             out.println(">Welcome!");
             out.println(">Type 'help' to see available commands.");
 
+            // for offline messages
             checkForPendingMessages(username);
 
             String userInput = in.readLine();
@@ -91,24 +92,6 @@ public class ClientHandler implements Runnable
         {
             unregisterClient();
         }
-    }
-
-    private void checkForPendingMessages(String username)
-    {
-        Map<String, List<String>> pendingMessages = MessageQueue.pendingMessagesForUser(username);
-        if (pendingMessages != null)
-        {
-            for(Map.Entry<String, List<String>> messagesFromSender: pendingMessages.entrySet())
-            {
-                String sender = messagesFromSender.getKey();
-                List<String> messages = messagesFromSender.getValue();
-                for (String message : messages)
-                {
-                    this.out.println(">" + sender + ": " + message);
-                }
-            }
-        }
-        MessageQueue.emptyInboxForUser(username);
     }
 
     private boolean validateUsername(String username)
@@ -176,9 +159,11 @@ public class ClientHandler implements Runnable
 
     private void handleUserInput(String userInput)
     {
+        // tokenize the input so we can better handle it
         String[] tokenizedInput = userInput.split("\\s+");
         String userCommand = tokenizedInput[0];
 
+        // gets the command from the Command enum
         dispatchCommand(Command.getCommand(userCommand), tokenizedInput);
     }
 
@@ -408,12 +393,14 @@ public class ClientHandler implements Runnable
         // Save the message
         String[] message = Arrays.copyOfRange(tokenizedInput, 1, tokenizedInput.length);
         String messageString = Utils.join(message);
+        // broadcast to all available user writers
         for (PrintWriter writer : writers)
         {
             writer.println(">" + this.user.getUsername() + ": " + messageString);
         }
     }
 
+    // gets the weather for a city!
     private void weather(String[] tokenizedInput)
     {
         int argLength = tokenizedInput.length - 1;
@@ -424,11 +411,12 @@ public class ClientHandler implements Runnable
         else
         {
             HTTPCall call = new HTTPCall();
-            String weatherEndpoint = call.getWeatherEndpoint() + tokenizedInput[1];
+            String city = tokenizedInput[1];
+            String weatherEndpoint = call.getWeatherEndpoint() + city;
             try
             {
                 String response = call.makeCall(weatherEndpoint);
-                this.out.println(">Weather for " + tokenizedInput[1]);
+                this.out.println(">Weather for " + city);
                 this.out.println(response);
             }
             catch (Exception e)
@@ -437,6 +425,7 @@ public class ClientHandler implements Runnable
         }
     }
 
+    // displays the user's ip
     private void myip(String[] tokenizedInput)
     {
         int argLength = tokenizedInput.length - 1;
@@ -459,6 +448,7 @@ public class ClientHandler implements Runnable
         }
     }
 
+    // sets the user as away
     private void away(String[] tokenizedInput)
     {
         int argLength = tokenizedInput.length - 1;
@@ -478,6 +468,7 @@ public class ClientHandler implements Runnable
         this.out.println(">Your status is now set as AWAY.");
     }
 
+    // sets the user from away to online
     private void back(String[] tokenizedInput)
     {
         int argLength = tokenizedInput.length - 1;
@@ -499,6 +490,7 @@ public class ClientHandler implements Runnable
         }
     }
 
+    // display logged users with their statuses
     private void statuses(String[] tokenizedInput)
     {
         int argLength = tokenizedInput.length - 1;
@@ -515,6 +507,7 @@ public class ClientHandler implements Runnable
         }
     }
 
+    // Displays all available commands
     private void help(String[] tokenizedInput)
     {
         int argLength = tokenizedInput.length - 1;
@@ -531,6 +524,26 @@ public class ClientHandler implements Runnable
         }
     }
 
+    // prints out pending messages for the user, if any
+    private void checkForPendingMessages(String username)
+    {
+        Map<String, List<String>> pendingMessages = MessageQueue.pendingMessagesForUser(username);
+        if (pendingMessages != null)
+        {
+            for(Map.Entry<String, List<String>> messagesFromSender: pendingMessages.entrySet())
+            {
+                String sender = messagesFromSender.getKey();
+                List<String> messages = messagesFromSender.getValue();
+                for (String message : messages)
+                {
+                    this.out.println(">" + sender + ": " + message);
+                }
+            }
+        }
+        MessageQueue.emptyInboxForUser(username);
+    }
+
+    // registers streams and the current user
     private void registerClient()
     {
         Auditor.registerClient(this.user, this.out);
