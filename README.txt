@@ -173,6 +173,9 @@ Commands
     This command displays all available commands and their descriptions. It's useful
     to see which commands are available. To invoke it, simply type 'help'.
 
-In addition to these features, I also made extensive use of Java's Executor
-framework (from Java's Standard Library) to manage thread pooling and to implement
-the timers. The result was a highly readabla and manageable code base.
+  In addition to these features, I also made extensive use of Java's Executor
+  framework (from Java's Standard Library) to manage thread pooling and to implement
+  the timers.
+
+  I also was careful to make code as readable as possible, so little comments
+  were necessary. I encourage you to browse the code and see it for yourself.
