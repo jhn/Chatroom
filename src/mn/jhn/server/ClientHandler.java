@@ -466,7 +466,7 @@ public class ClientHandler implements Runnable
         if (argLength > 1)
         {
             String[] message = Arrays.copyOfRange(tokenizedInput, 1, argLength + 1);
-            messageString = ">" + this.user.getUsername() + "'s automatic response:  " + Utils.join(message);
+            messageString = ">" + this.user.getUsername() + " is away. Auto-response: " + Utils.join(message);
         }
         else
         {
