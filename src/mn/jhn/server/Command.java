@@ -1,23 +1,26 @@
 package mn.jhn.server;
 
-import java.util.Collections;
-import java.util.HashSet;
-import java.util.Set;
+import java.util.*;
 
 public enum Command
 {
-    WHOELSE("whoelse", 0),
-    WHOLASTHR("wholasthr", 0),
-    BROADCAST("broadcast", 1),
-    MESSAGE("message", 2),
-    BLOCK("block", 1),
-    UNBLOCK("unblock", 1),
-    LOGOUT("logout", 0),
-    WEATHER("weather", 1),
-    MYIP("myip", 0);
+    WHOELSE("whoelse", 0, "See who else is connected right now."),
+    WHOLASTHR("wholasthr", 0, "See who was here during the last hour."),
+    BROADCAST("broadcast", 1, "Send a message to everyone."),
+    MESSAGE("message", 2, "Send someone a private message."),
+    BLOCK("block", 1, "Block that annoying someone."),
+    UNBLOCK("unblock", 1, "Unblock a previously blocked user."),
+    LOGOUT("logout", 0, "Log out of the chatroom."),
+    WEATHER("weather", 1, "Get the weather for a city."),
+    MYIP("myip", 0, "Find out what your IP address is."),
+    AWAY("away", 1, "Set your status as away."),
+    BACK("back", 0, "Set your status as online after being away."),
+    STATUSES("statuses", 0, "Display statuses of all logged in users."),
+    HELP("help", 0, "Display all available commands.");
 
     private final String name;
     private final int arity;
+    private final String description;
     private final static Set<String> COMMANDS;
 
     static
@@ -30,15 +33,21 @@ public enum Command
         Collections.unmodifiableSet(COMMANDS);
     }
 
-    Command(String name, int arity)
+    Command(String name, int arity, String description)
     {
         this.name = name;
         this.arity = arity;
+        this.description = description;
     }
 
-    public static Set<String> getCommands()
+    public static Map<String, String> getCommandsWithDescriptions()
     {
-        return COMMANDS;
+        Map<String, String> commands = new HashMap<String, String>();
+        for (Command command : Command.values())
+        {
+            commands.put(command.getName(), command.getDescription());
+        }
+        return commands;
     }
 
     public String getName()
@@ -49,6 +58,11 @@ public enum Command
     public int getArity()
     {
         return arity;
+    }
+
+    public String getDescription()
+    {
+        return description;
     }
 
     public static Command getCommand(String name)

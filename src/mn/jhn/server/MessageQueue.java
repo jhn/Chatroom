@@ -45,7 +45,7 @@ public class MessageQueue
         }
     }
 
-    public synchronized static Map<String, List<String>> pendingMessagesForUser(String username)
+    public static Map<String, List<String>> pendingMessagesForUser(String username)
     {
         return messages.get(username);
     }

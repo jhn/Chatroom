@@ -20,6 +20,7 @@ public class ClientHandler implements Runnable
     private final PrintWriter out;
     private User user;
 
+
     static
     {
         LOGIN_ATTEMPTS_FOR_USER = new ConcurrentHashMap<Map<String, InetAddress>, AtomicInteger>();
@@ -71,6 +72,7 @@ public class ClientHandler implements Runnable
 
             out.println(">Logged in.");
             out.println(">Welcome!");
+            out.println(">Type 'help' to see available commands.");
 
             checkForPendingMessages(username);
 
@@ -196,6 +198,12 @@ public class ClientHandler implements Runnable
             case BLOCK:     block(tokenizedInput);     break;
             case UNBLOCK:   unblock(tokenizedInput);   break;
             case LOGOUT:    logout(tokenizedInput);    break;
+            case WEATHER:   weather(tokenizedInput);   break;
+            case MYIP:      myip(tokenizedInput);      break;
+            case AWAY:      away(tokenizedInput);      break;
+            case BACK:      back(tokenizedInput);      break;
+            case STATUSES:  statuses(tokenizedInput);  break;
+            case HELP:      help(tokenizedInput);      break;
         }
     }
 
@@ -206,8 +214,8 @@ public class ClientHandler implements Runnable
 
     private void logout(String[] tokenizedInput)
     {
-        int argLength = tokenizedInput.length;
-        if (Command.checkArityForCommand(Command.LOGOUT, argLength))
+        int argLength = tokenizedInput.length - 1;
+        if (!Command.checkArityForCommand(Command.LOGOUT, argLength))
         {
             this.out.println(">This command takes no arguments");
         }
@@ -220,8 +228,8 @@ public class ClientHandler implements Runnable
 
     private void unblock(String[] tokenizedInput)
     {
-        int argLength = tokenizedInput.length;
-        if (Command.checkArityForCommand(Command.UNBLOCK, argLength))
+        int argLength = tokenizedInput.length - 1;
+        if (!Command.checkArityForCommand(Command.UNBLOCK, argLength))
         {
             this.out.println(">Usage: unblock <user>");
             return;
@@ -256,8 +264,8 @@ public class ClientHandler implements Runnable
 
     private void block(String[] tokenizedInput)
     {
-        int argLength = tokenizedInput.length;
-        if (Command.checkArityForCommand(Command.BLOCK, argLength))
+        int argLength = tokenizedInput.length - 1;
+        if (!Command.checkArityForCommand(Command.BLOCK, argLength))
         {
             this.out.println(">Syntax: block <user>");
             return;
@@ -292,7 +300,7 @@ public class ClientHandler implements Runnable
 
     private void message(String[] tokenizedInput)
     {
-        int argLength = tokenizedInput.length;
+        int argLength = tokenizedInput.length - 1;
         if (argLength < Command.MESSAGE.getArity())
         {
             this.out.println(">Usage: message <user> <message>");
@@ -312,14 +320,19 @@ public class ClientHandler implements Runnable
             if (!Auditor.userIsBlocked(targetUser, this.user.getUsername()))
             {
                 // Save the message
-                String[] message = Arrays.copyOfRange(tokenizedInput, 2, argLength);
+                String[] message = Arrays.copyOfRange(tokenizedInput, 2, argLength + 1);
                 String messageString = Utils.join(message);
 
                 // Either the user is online and we send, or is offline and we queue
                 if (Auditor.getLoggedInUsers().containsKey(targetUser))
                 {
-                    PrintWriter userWriter = Auditor.getLoggedInUsers().get(targetUser);
-                    userWriter.println(">" + this.user.getUsername() + ": " + messageString);
+                    // Let's see if the user is away and if so display the message they set up
+                    if  (Auditor.getUserStatus(targetUser) == Auditor.UserStatus.AWAY)
+                    {
+                        this.out.println(Auditor.getAwayMessageForUser(targetUser));
+                    }
+                    PrintWriter targetUserWriter = Auditor.getLoggedInUsers().get(targetUser);
+                    targetUserWriter.println(">" + this.user.getUsername() + ": " + messageString);
                 }
                 else
                 {
@@ -340,8 +353,8 @@ public class ClientHandler implements Runnable
 
     private void wholasthr(String[] tokenizedInput)
     {
-        int argLength = tokenizedInput.length;
-        if (Command.checkArityForCommand(Command.WHOLASTHR, argLength))
+        int argLength = tokenizedInput.length - 1;
+        if (!Command.checkArityForCommand(Command.WHOLASTHR, argLength))
         {
             this.out.println(">This command takes no arguments");
         }
@@ -371,8 +384,8 @@ public class ClientHandler implements Runnable
 
     private void whoelse(String[] tokenizedInput)
     {
-        int argLength = tokenizedInput.length;
-        if (Command.checkArityForCommand(Command.WHOELSE, argLength))
+        int argLength = tokenizedInput.length - 1;
+        if (!Command.checkArityForCommand(Command.WHOELSE, argLength))
         {
             this.out.println(">This command takes no arguments");
         }
@@ -398,6 +411,123 @@ public class ClientHandler implements Runnable
         for (PrintWriter writer : writers)
         {
             writer.println(">" + this.user.getUsername() + ": " + messageString);
+        }
+    }
+
+    private void weather(String[] tokenizedInput)
+    {
+        int argLength = tokenizedInput.length - 1;
+        if (!Command.checkArityForCommand(Command.WEATHER, argLength))
+        {
+            this.out.println(">Usage: weather <city>");
+        }
+        else
+        {
+            HTTPCall call = new HTTPCall();
+            String weatherEndpoint = call.getWeatherEndpoint() + tokenizedInput[1];
+            try
+            {
+                String response = call.makeCall(weatherEndpoint);
+                this.out.println(">Weather for " + tokenizedInput[1]);
+                this.out.println(response);
+            }
+            catch (Exception e)
+            {
+            }
+        }
+    }
+
+    private void myip(String[] tokenizedInput)
+    {
+        int argLength = tokenizedInput.length - 1;
+        if (!Command.checkArityForCommand(Command.MYIP, argLength))
+        {
+            this.out.println(">This command does not take any arguments");
+        }
+        else
+        {
+            HTTPCall call = new HTTPCall();
+            try
+            {
+                String response = call.makeCall(call.getIpEndpoint());
+                this.out.println(">Your ip: ");
+                this.out.println(response);
+            }
+            catch (Exception e)
+            {
+            }
+        }
+    }
+
+    private void away(String[] tokenizedInput)
+    {
+        int argLength = tokenizedInput.length - 1;
+        String messageString;
+        if (argLength > 1)
+        {
+            String[] message = Arrays.copyOfRange(tokenizedInput, 1, argLength + 1);
+            messageString = ">" + this.user.getUsername() + "'s automatic response:  " + Utils.join(message);
+        }
+        else
+        {
+            messageString = ">This user is currently away.";
+        }
+
+        Auditor.setUserStatus(this.user.getUsername(), Auditor.UserStatus.AWAY);
+        Auditor.setAwayMessageForUser(this.user.getUsername(), messageString);
+        this.out.println(">Your status is now set as AWAY.");
+    }
+
+    private void back(String[] tokenizedInput)
+    {
+        int argLength = tokenizedInput.length - 1;
+        if (!Command.checkArityForCommand(Command.WHOELSE, argLength))
+        {
+            this.out.println(">This command takes no arguments");
+        }
+        else
+        {
+            if (Auditor.getUserStatus(this.user.getUsername()) == Auditor.UserStatus.AWAY)
+            {
+                Auditor.setUserStatus(this.user.getUsername(), Auditor.UserStatus.ONLINE);
+                this.out.println(">Your status is now set as ONLINE.");
+            }
+            else
+            {
+                this.out.println(">Your status was not set as AWAY, so nothing happened.");
+            }
+        }
+    }
+
+    private void statuses(String[] tokenizedInput)
+    {
+        int argLength = tokenizedInput.length - 1;
+        if (!Command.checkArityForCommand(Command.STATUSES, argLength))
+        {
+            this.out.println(">This command takes no arguments");
+        }
+        else
+        {
+            for (Map.Entry<String, String> c : Auditor.getUsersAndStatuses().entrySet())
+            {
+                this.out.println(">" + c.getKey() + " - " + c.getValue());
+            }
+        }
+    }
+
+    private void help(String[] tokenizedInput)
+    {
+        int argLength = tokenizedInput.length - 1;
+        if (!Command.checkArityForCommand(Command.HELP, argLength))
+        {
+            this.out.println(">This command takes no arguments");
+        }
+        else
+        {
+            for (Map.Entry<String, String> c : Command.getCommandsWithDescriptions().entrySet())
+            {
+                this.out.println("> " + c.getKey() + ": " + c.getValue());
+            }
         }
     }
 

@@ -9,7 +9,7 @@ import java.util.concurrent.*;
 
 public class Client
 {
-    private static final int TIME_OUT = 1800; // in seconds
+    private static final int TIME_OUT = 5; // in seconds
 
     public static void main(String[] args) throws IOException
     {
