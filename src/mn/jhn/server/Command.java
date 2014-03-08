@@ -12,7 +12,9 @@ public enum Command
     MESSAGE("message", 2),
     BLOCK("block", 1),
     UNBLOCK("unblock", 1),
-    LOGOUT("logout", 0);
+    LOGOUT("logout", 0),
+    WEATHER("weather", 1),
+    MYIP("myip", 0);
 
     private final String name;
     private final int arity;
@@ -59,6 +61,11 @@ public enum Command
             }
         }
         return null;
+    }
+
+    public static boolean checkArityForCommand(Command c, int arity)
+    {
+        return c.getArity() == arity;
     }
 
     @Override
