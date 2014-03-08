@@ -470,7 +470,7 @@ public class ClientHandler implements Runnable
         }
         else
         {
-            messageString = ">This user is currently away.";
+            messageString = ">Message delivered, but this user is currently away.";
         }
 
         Auditor.setUserStatus(this.user.getUsername(), Auditor.UserStatus.AWAY);
